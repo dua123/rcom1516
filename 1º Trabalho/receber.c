@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
 
 
 
@@ -77,9 +77,11 @@ int main(int argc, char** argv)
     while (STOP==FALSE) {       /* loop for input */
 	res = read(fd,buf,1);
 	buf[res]=0;
-	printf(":%s:%d\n", buf, res);
-	res = write(fd,buf,strlen(buf));
-	if (buf[0]=='z') STOP=TRUE;
+	//if (buf[0] != 0)		
+		printf(":%s:%d\n", buf, res);
+	res = write(fd,buf,1);
+
+	if (buf[0]==0) STOP=TRUE;
     }
 
 

@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     newtio.c_lflag = 0;
  
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
  
  
  
@@ -72,12 +72,12 @@ int main(int argc, char** argv)
  
     printf("New termios structure set\n");
  
- 
- 
     /*testing*/
     printf("escrever msg: \n");
     gets(buf);
-    res = write(fd,buf,strlen(buf));  
+    buf[strlen(buf)]=0;
+    res = write(fd,buf,strlen(buf)+1);  
+    sleep(1);
     printf("%d bytes written\n", res);
  
  
@@ -85,10 +85,8 @@ int main(int argc, char** argv)
 	res = read(fd,buf,1);
       buf[res]=0;               
       printf(":%s:%d\n", buf, res);
-      if (buf[0]=='z') STOP=TRUE;
+      if (buf[0]==0) STOP=TRUE;
     }
-
-
 
 
 
@@ -98,7 +96,7 @@ int main(int argc, char** argv)
     o indicado no guião
   */
  
- 
+
  
    
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
