@@ -76,19 +76,31 @@ UA[4]=0x7E;
     printf("New termios structure set\n");
  
     /*testing*/
-    printf("escrever Evia SET: \n");
-    res = write(fd,SET[0],1);  
-    sleep(1);
+    printf("escrever Evia UA: \n");
+    res = write(fd,UA[0],1); 
+printf("%d bytes written\n", res);
+    sleep(1); 
+    res = write(fd,UA[1],1);
+printf("%d bytes written\n", res);
+    sleep(1);  
+    res = write(fd,UA[2],1);
+printf("%d bytes written\n", res);  
+sleep(1);    
+res = write(fd,UA[3],1);
+printf("%d bytes written\n", res);  
+sleep(1);
+    res = write(fd,UA[4],1);  
+
     printf("%d bytes written\n", res);
  
- 
-	while (STOP==FALSE) {       /* loop for input */
+/* 
+	while (STOP==FALSE) {        loop for input 
 	res = read(fd,buf,1);
       buf[res]=0;               
       printf(":%s:%d\n", buf, res);
       if (buf[0]==0) STOP=TRUE;
     }
-
+*/
 
 
 
