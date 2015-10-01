@@ -62,14 +62,10 @@ int main(int argc, char** argv)
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
     newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
 
-
-
-  /* 
+	/* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
     leitura do(s) próximo(s) caracter(es)
-  */
-
-
+	*/
 
     tcflush(fd, TCIOFLUSH);
 
@@ -77,26 +73,60 @@ int main(int argc, char** argv)
       perror("tcsetattr");
       exit(-1);
     }
-
-    printf("New termios structure set\n");
-
-
-    while (STOP==FALSE) {       /* loop for input */
-	res = read(fd,buf,1);
-	buf[res]=0;
-	//if (buf[0] != 0)		
-		printf(":%s:%d\n", buf, res);
-	res = write(fd,buf,1);
-
-	if (buf[0]==0) STOP=TRUE;
-    }
+	printf("New termios structure set\n");
 
 
-  /* 
-    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião 
-  */
+	//RECEBER SET
+	unsigned char * receive = SET;
+	unsigned char pak;
+	int state = 0; 
+	while (STOP==FALSE) {
+		read(fd,pak,1);
+		printf("Received state: %d Package: %x \n", state, pak);
+		
 
-
+		switch (state)
+		{
+		case 0: //Espera FLAG - F
+			if (pak == receive[0])
+				state++;
+			break;
+		case 1:	//Espera Edreço - A
+			if (pak == receive[1])
+				state++;
+			else if (pak == receive[0])
+				;
+			else
+				state = 0;
+			break;
+		case 2: // Espera Controlo - C
+			if (pak == receive[2])
+				state++;
+			else if (pak == receive[0])
+				state = 1;
+			else
+				state = 0;
+			break;
+		case 3: // Espera de BCC
+			if (pak == receive[3])
+				state++;
+			else if (pak == receive[0])
+				state = 1;
+			else
+				state = 0;
+			break;
+		case 4: // Espera Flag - F
+			if (pak == receive[3])
+			{
+				printf("Recebi o SET inteiro\n");
+				state = 0;
+				STOP = TRUE;
+			}
+			else
+				state = 0;
+			break;
+		}
+	}
 
     tcsetattr(fd,TCSANOW,&oldtio);
     close(fd);
