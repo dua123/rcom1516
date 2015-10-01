@@ -16,20 +16,16 @@
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 
-char SET[5],UA[5];
-SET[0]="0x7E";
-SET[1]="0x03";
-SET[2]="0x03";
-SET[3]="0x00";
-SET[4]="0x7E";
-
-UA[0]="0x7E";
-UA[1]="0x03";
-UA[2]="0x07";
-UA[3]="0x00";
-UA[4]="0x7E";
+unsigned char SET[5];
 
 
+unsigned char UA[5];
+/*UA[0]=0x7E;
+UA[1]=0x03;
+UA[2]=0x07;
+UA[3]=0xFF; // aplicacao do xor ^
+UA[4]=0x7E;
+*/
 
 
 
