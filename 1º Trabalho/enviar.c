@@ -85,8 +85,22 @@ UA[4]=0x7E;
     printf("escrever %x: \n",buf[0]);
     res = write(fd,buf,5);
     printf("%d bytes written\n", res);
-    sleep(5); 
- 
+  
+  	//RECEBER SET
+  	printf("Vou esperar pelo UA \n");
+	unsigned char pak[5];
+		usleep(50);
+		res = read(fd,&pak,5);
+		printf("%d bytes read\n", res);
+		printf("Received Package: %x \n", pak[0]);
+
+
+		if (pak[0] == UA[0] && pak[1] == UA[1] && pak[2] == UA[2] && pak[3] == UA[3] && pak[4] == UA[4])
+		    printf("Sucesso \n");
+	    else
+	        printf("Falhou \n");
+	    
+	
 /* 
 	while (STOP==FALSE) {        loop for input 
 	res = read(fd,buf,1);

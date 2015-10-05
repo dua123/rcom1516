@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
     int fd,c, res;
     struct termios oldtio,newtio;
-    char buf[255];
+    char buf[5];
 
     if ( (argc < 2) || 
   	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
@@ -132,6 +132,20 @@ int main(int argc, char** argv)
 			break;
 		}
 	}
+
+	// Enviar UA resposta
+	usleep(50);
+	printf("escrever Evia SET: \n");
+	buf[0]=UA[0];
+	buf[1]=UA[1];
+	buf[2]=UA[2];
+	buf[3]=UA[3];
+	buf[4]=UA[4];
+	printf("escrever %x: \n",buf[0]);
+	res = write(fd,buf,5);
+	printf("%d bytes written\n", res);
+	sleep(2);
+	
 
     tcsetattr(fd,TCSANOW,&oldtio);
     close(fd);
