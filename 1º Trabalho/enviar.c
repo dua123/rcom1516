@@ -21,7 +21,7 @@ UA[4]=0x7E;
 
     int fd,c, res;
     struct termios oldtio,newtio;
-    char buf[255];
+    char buf[5];
     int i, sum = 0, speed = 0;
    
     if ( (argc < 2) ||
@@ -76,22 +76,16 @@ UA[4]=0x7E;
     printf("New termios structure set\n");
  
     /*testing*/
-    printf("escrever Evia UA: \n");
-    res = write(fd,UA[0],1); 
-printf("%d bytes written\n", res);
-    sleep(1); 
-    res = write(fd,UA[1],1);
-printf("%d bytes written\n", res);
-    sleep(1);  
-    res = write(fd,UA[2],1);
-printf("%d bytes written\n", res);  
-sleep(1);    
-res = write(fd,UA[3],1);
-printf("%d bytes written\n", res);  
-sleep(1);
-    res = write(fd,UA[4],1);  
-
+    printf("escrever Evia SET: \n");
+    buf[0]=SET[0];
+    buf[1]=SET[1];
+    buf[2]=SET[2];
+    buf[3]=SET[3];
+    buf[4]=SET[4];
+    printf("escrever %x: \n",buf[0]);
+    res = write(fd,buf,5);
     printf("%d bytes written\n", res);
+    sleep(5); 
  
 /* 
 	while (STOP==FALSE) {        loop for input 

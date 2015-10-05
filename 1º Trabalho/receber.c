@@ -9,7 +9,7 @@
 volatile int STOP=FALSE;
 
 int main(int argc, char** argv)
-{
+{	
 	SET[0]=0x7E;
 	SET[1]=0x03;
 	SET[2]=0x03;
@@ -42,7 +42,6 @@ int main(int argc, char** argv)
     because we don't want to get killed if linenoise sends CTRL-C.
   */
   
-    
     fd = open(argv[1], O_RDWR | O_NOCTTY );
     if (fd <0) {perror(argv[1]); exit(-1); }
 
@@ -61,6 +60,7 @@ int main(int argc, char** argv)
 
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
     newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
+
 
 	/* 
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a 
@@ -81,42 +81,47 @@ int main(int argc, char** argv)
 	unsigned char pak;
 	int state = 0; 
 	while (STOP==FALSE) {
-		read(fd,pak,1);
-		printf("Received state: %d Package: %x \n", state, pak);
+		printf("Current State: %d \n", state);
+		usleep(50);
+		read(fd,&pak,1);
+		printf("Received Package: %x \n", pak);
 		
 
 		switch (state)
 		{
 		case 0: //Espera FLAG - F
-			if (pak == receive[0])
+			if (pak == SET[0])
+			{
+				printf("Passei ao estado 1 \n");
 				state++;
+			}
 			break;
 		case 1:	//Espera Edreço - A
-			if (pak == receive[1])
+			if (pak == SET[1])
 				state++;
-			else if (pak == receive[0])
+			else if (pak == SET[0])
 				;
 			else
 				state = 0;
 			break;
 		case 2: // Espera Controlo - C
-			if (pak == receive[2])
+			if (pak == SET[2])
 				state++;
-			else if (pak == receive[0])
+			else if (pak == SET[0])
 				state = 1;
 			else
 				state = 0;
 			break;
 		case 3: // Espera de BCC
-			if (pak == receive[3])
+			if (pak == SET[3])
 				state++;
-			else if (pak == receive[0])
+			else if (pak == SET[0])
 				state = 1;
 			else
 				state = 0;
 			break;
 		case 4: // Espera Flag - F
-			if (pak == receive[3])
+			if (pak == SET[4])
 			{
 				printf("Recebi o SET inteiro\n");
 				state = 0;
