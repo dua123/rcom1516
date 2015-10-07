@@ -1,4 +1,8 @@
- 
+CC = gcc 
+CFLAGS = -o 
+LIBRARIES = global.h
 
-gcc enviar.c global.h -o enviar 
-gcc receber.c global.h -o receber
+emissor: enviar.c
+	$(CC) enviar.c $(LIBRARIES) $(CFLAGS) enviar 
+recetor: enviar.c
+	$(CC) enviar.c.c $(LIBRARIES) $(CFLAGS) receber
