@@ -1,10 +1,14 @@
 /*Non-Canonical Input Processing*/
  
 #include "global.h"
- 
- 
+
+
 volatile int STOP=FALSE;
+int fd,c, res;
+char buf[5];
  
+void atende();
+
 int main(int argc, char** argv)
 {
 SET[0]=0x7E;
@@ -19,9 +23,7 @@ UA[2]=0x07;
 UA[3]=0xFF; // aplicacao do xor ^
 UA[4]=0x7E;
 
-    int fd,c, res;
     struct termios oldtio,newtio;
-    char buf[5];
     int i, sum = 0, speed = 0;
    
     if ( (argc < 2) ||
@@ -72,7 +74,7 @@ UA[4]=0x7E;
       perror("tcsetattr");
       exit(-1);
     }
- 
+ 	 // instala  rotina que atende interrupcao
     printf("New termios structure set\n");
  
     /*testing*/
@@ -82,24 +84,33 @@ UA[4]=0x7E;
     buf[2]=SET[2];
     buf[3]=SET[3];
     buf[4]=SET[4];
+(void) signal(SIGALRM, atende); 
     printf("escrever %x: \n",buf[0]);
-    res = write(fd,buf,5);
-    printf("%d bytes written\n", res);
-  
-  	//RECEBER SET
-  	printf("Vou esperar pelo UA \n");
-	unsigned char pak[5];
+	while(STOP==FALSE)
+	{
+  		alarm(3); 
+    		res = write(fd,buf,5);
+		printf("%d bytes written\n", res);
+
+	
+  		//RECEBER SET
+  		printf("Vou esperar pelo UA \n");
+		unsigned char pak[5];
 		usleep(50);
+		
 		res = read(fd,&pak,5);
+		
 		printf("%d bytes read\n", res);
 		printf("Received Package: %x \n", pak[0]);
-
-
 		if (pak[0] == UA[0] && pak[1] == UA[1] && pak[2] == UA[2] && pak[3] == UA[3] && pak[4] == UA[4])
-		    printf("Sucesso \n");
-	    else
-	        printf("Falhou \n");
-	    
+		{
+			printf("Sucesso \n");
+			STOP = TRUE;
+		}
+		else
+			printf("Falhou \n");
+		
+	}
 	
 /* 
 	while (STOP==FALSE) {        loop for input 
@@ -130,4 +141,15 @@ UA[4]=0x7E;
  
     close(fd);
     return 0;
+}
+
+
+void atende()                   // atende alarme
+{
+	if (STOP == FALSE)
+	{
+		printf("Ocorreu time out, re-enviar SET \n");
+		res = write(fd,buf,5);
+		alarm(3); 
+	}
 }
