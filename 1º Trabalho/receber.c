@@ -5,26 +5,35 @@
 #include "global.h"
 
 
-
 volatile int STOP=FALSE;
+int fd,c, res;
+char buf[5];
+
 
 int main(int argc, char** argv)
 {	
 	SET[0]=0x7E;
 	SET[1]=0x03;
-	SET[2]=0x03;
+	SET[2]=0x07;
 	SET[3]=0x00;
 	SET[4]=0x7E;
 
 	UA[0]=0x7E;
 	UA[1]=0x03;
-	UA[2]=0x07;
-	UA[3]=0xFF; // aplicacao do xor ^
+	UA[2]=0x03;
+	UA[3]=0xFF;
 	UA[4]=0x7E;
 
-    int fd,c, res;
+	DISC[0]=0x7E;
+	DISC[1]=0x03;
+	DISC[2]=0x0B;
+	DISC[3]=0x00;
+	DISC[4]=0x7E;
+
+
+	
     struct termios oldtio,newtio;
-    char buf[5];
+
 
     if ( (argc < 2) || 
   	     ((strcmp("/dev/ttyS0", argv[1])!=0) && 
@@ -76,23 +85,37 @@ int main(int argc, char** argv)
 	printf("New termios structure set\n");
 
 
+	
+	if(llopen() == 1)
+		printf("llopen(): Falhou\n");
+	
+	if(llclose() == 1)
+		printf("llclose(): Falhou\n");
+	
+
+	sleep(2);
+	
+
+    tcsetattr(fd,TCSANOW,&oldtio);
+    close(fd);
+    return 0;
+}
+
+int llopen(){
+
 	//RECEBER SET
 	unsigned char * receive = SET;
 	unsigned char pak;
 	int state = 0; 
 	while (STOP==FALSE) {
-		printf("Current State: %d \n", state);
 		usleep(50);
 		read(fd,&pak,1);
-		printf("Received Package: %x \n", pak);
-		
 
 		switch (state)
 		{
 		case 0: //Espera FLAG - F
 			if (pak == SET[0])
 			{
-				printf("Passei ao estado 1 \n");
 				state++;
 			}
 			break;
@@ -123,7 +146,7 @@ int main(int argc, char** argv)
 		case 4: // Espera Flag - F
 			if (pak == SET[4])
 			{
-				printf("Recebi o SET inteiro\n");
+				printf("llopen(): Recebi o SET inteiro\n");
 				state = 0;
 				STOP = TRUE;
 			}
@@ -135,19 +158,24 @@ int main(int argc, char** argv)
 
 	// Enviar UA resposta
 	usleep(50);
-	printf("escrever Evia SET: \n");
 	buf[0]=UA[0];
 	buf[1]=UA[1];
 	buf[2]=UA[2];
 	buf[3]=UA[3];
 	buf[4]=UA[4];
-	printf("escrever %x: \n",buf[0]);
+	printf("llopen(): A enviar UA\n");
 	res = write(fd,buf,5);
-	printf("%d bytes written\n", res);
-	sleep(2);
+	printf("llopen(): %d bytes written\n", res);
+
+	return 0;
+ }
+
+int llclose(){
+	STOP = FALSE;
 	
 
-    tcsetattr(fd,TCSANOW,&oldtio);
-    close(fd);
-    return 0;
 }
+
+
+
+
