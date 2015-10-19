@@ -17,6 +17,9 @@
 #define FALSE 0
 #define TRUE 1
 
+#define EMISSOR 0
+#define RECETOR 1
+
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 

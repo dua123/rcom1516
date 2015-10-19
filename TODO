@@ -1,10 +1,15 @@
 Falta fazer:
 
 Alta Prioridade:
-	>Separar as funções da aplicação (dois ficheiros C, um é a aplicação, outro tem a sfunções)
-	>Relatório	 
+		 
 	>Acabar a funcionalidade toda, mesmo que às três pancadas
+		* llclose()
+		* llwrite()
+		* llread()
+		
 
 Baixa Prioridade:
-
-	>Acrescentar máquinas de estado à recepção de dados em llopen()
+	>Separar as funções da aplicação (dois ficheiros C, um é a aplicação, outro tem a sfunções)
+	>Relatório
+	>Acrescentar máquinas de estado à recepção de dados em llopen() e em llclose()
+	
