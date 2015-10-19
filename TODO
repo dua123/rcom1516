@@ -6,3 +6,5 @@ Alta Prioridade:
 	>Acabar a funcionalidade toda, mesmo que às três pancadas
 
 Baixa Prioridade:
+
+	>Acrescentar máquinas de estado à recepção de dados em llopen()

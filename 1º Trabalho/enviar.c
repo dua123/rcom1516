@@ -10,6 +10,7 @@ char buf[5];
 void atende();
 int llopen();
 int llclose();
+int byte_stuffing_encode(char * trama, char * res);
 
 int main(int argc, char** argv)
 {
@@ -138,6 +139,8 @@ int llopen()
 		sleep(2);
 		
 	}
+
+	
 	return 0;	
 }
 
@@ -154,4 +157,50 @@ void atende()                   // atende alarme
 int llclose()
 {
 	STOP = FALSE;
+
+	char test[256]= {0x1A,0x2D,0x7E,0x5E,0x7D,0x4B,0x7D,0x5D}, text[513]={};
+	byte_stuffing_encode(test, text);
 }
+
+int byte_stuffing_encode(char * trama, char * res){
+	
+	int i, j=0;	
+	
+	for(i = 0; i < strlen(trama); i++, j++)
+	{
+		printf("\n%#X", trama[i]);
+		
+
+		if (trama[i]  == 0x7E) 
+		{
+			res[j] = 0x7D;
+                        printf("   %#X", res[j]);
+			j++;
+			res[j] = 0x5E;
+			printf("   %#X", res[j]);
+		}
+		else if(trama[i]  == 0x7D)
+		{
+			res[j] = 0x7D;
+                        printf("   %#X", res[j]);
+			j++;
+			res[j] = 0x5D;
+			printf("   %#X", res[j]);
+		}
+		else{
+			res[j] = trama[i];
+			printf("   %#X", res[j]);
+
+		}
+
+	}
+	res[j] = 0x7E;
+	printf("\n      %#X", res[j]);
+
+	
+	return 0;
+}
+
+
+
+
