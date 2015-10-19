@@ -8,6 +8,7 @@
 volatile int STOP=FALSE;
 int fd,c, res;
 char buf[5];
+int* de_stuffing(char * trama,char * res);
 
 
 int main(int argc, char** argv)
@@ -173,7 +174,46 @@ int llopen(){
 int llclose(){
 	STOP = FALSE;
 	
+	char test[513]= {0x1A,0x2D,0x7D,0x5E,0x5E,0x7D,0x5D,0x4B,0x7D,0x5D,0x5D,0x7E}, text[513]={};
+	de_stuffing(test, text);
+}
 
+int* de_stuffing(char * trama,char * res)
+{
+	int i, j=0;	
+	
+	for(i = 0; i < strlen(trama); i++, j++)
+	{
+		printf("\n%#X", trama[i]);
+		
+
+		if (trama[i]  == 0x7D && trama[i+1] == 0x5E) 
+		{
+			res[j] = 0x7E;
+                        printf("   %#X", res[j]);
+			printf("\n%#X", trama[i+1]);
+			i++;
+		}
+		else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
+		{
+			res[j] = 0x7D;
+                        printf("   %#X", res[j]);
+			printf("\n%#X", trama[i+1]);
+			i++;
+		}
+		else if(trama[i] == 0x7E)
+		{
+		}
+		else
+		{
+			res[j] = trama[i];
+			printf("   %#X", res[j]);
+		}
+
+	}
+	printf("\n");
+	
+	return 0;
 }
 
 
