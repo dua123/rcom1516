@@ -12,6 +12,8 @@ int llopen();
 int llclose();
 int byte_stuffing_encode(char * trama, char * res);
 int de_stuffing(char * trama,char * res);
+long file_to_buffer(char * buffer, char * name);
+int buffer_to_file(char * buffer, char * name, long file_size);
 
 int main(int argc, char** argv)
 {
@@ -94,14 +96,30 @@ int main(int argc, char** argv)
 		printf("Falhou \n");
 
  
+	char buf_ficheiro[BUFFLENGTH];
+	char buf_resultado[BUFFLENGTH];
+	long file_size = file_to_buffer(buf_ficheiro, "image1.jpg");
+	if (file_size == -1) 
+	{
+      perror("file_to_buffer()");
+      exit(-1);
+    }
+    if ( buffer_to_file(buf_ficheiro, "image2.jpg", file_size) == -1) {
+      perror("buffer_to_file()");
+      exit(-1);
+    }
+
+   file_to_buffer(buf_resultado, "image2.jpg");
    
+   if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
+   		printf("SUCESSO");
+
+
+
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
       perror("tcsetattr");
       exit(-1);
     }
- 
- 
- 
  
     close(fd);
     return 0;
@@ -248,6 +266,46 @@ int de_stuffing(char * trama,char * res)
 	return 0;
 }
 
+long file_to_buffer(char * buffer, char * name)
+{
+	FILE * fp = fopen(name, "r");
+	long file_size;
+
+	if (fp != NULL)
+	{
+		//obtain file size
+		fseek(fp, 0, SEEK_END);
+		file_size = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		//Read the file
+		if (fread(buffer, sizeof(char), file_size, fp) == 0 )
+			printf("file_to_buffer(): Erro a ler ficheiro \n");
 
 
+		fclose(fp);
 
+
+	}
+	else
+	{
+		printf("file_to_buffer(): Erro a abrir ficheiro \n");
+		return -1;
+	}
+
+	printf("file_to_buffer(): Terminou com sucesso \n");
+	printf("file_to_buffer(): Tamanho do ficheiro: %lu \n", file_size);
+	return file_size;
+}
+
+
+int buffer_to_file(char * buffer, char * name, long file_size)
+{
+	FILE * fp = fopen(name, "a+");
+
+	fwrite(buffer, sizeof(char), file_size, fp);
+
+	fclose(fp);
+
+	return 0;
+}

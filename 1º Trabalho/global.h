@@ -20,6 +20,8 @@
 #define EMISSOR 0
 #define RECETOR 1
 
+#define BUFFLENGTH 1000000
+
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
