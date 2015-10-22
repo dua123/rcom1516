@@ -14,6 +14,7 @@ int byte_stuffing_encode(char * trama, char * res);
 int de_stuffing(char * trama,char * res);
 long file_to_buffer(char * buffer, char * name);
 int buffer_to_file(char * buffer, char * name, long file_size);
+int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_size);
 
 int main(int argc, char** argv)
 {
@@ -104,15 +105,32 @@ int main(int argc, char** argv)
       perror("file_to_buffer()");
       exit(-1);
     }
-    if ( buffer_to_file(buf_ficheiro, "image2.jpg", file_size) == -1) {
-      perror("buffer_to_file()");
-      exit(-1);
+
+    int progress = 0;
+    char chunk[256];
+    while (progress < file_size)
+    {
+    	progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
+    	
+    	if ( buffer_to_file(chunk, "image2.jpg", 256) == -1) {
+      	perror("buffer_to_file()");
+      	exit(-1);
+    	}
+
+    	printf("progress: %d", progress);
+
     }
+    
+
+
+
+   
 
    file_to_buffer(buf_resultado, "image2.jpg");
    
    if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
    		printf("SUCESSO");
+
 
 
 
@@ -309,3 +327,16 @@ int buffer_to_file(char * buffer, char * name, long file_size)
 
 	return 0;
 }
+
+int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_size)
+{
+	int i = 0;
+	for (; i < chunk_size && offset+i < file_size; i++)
+	{
+		res[i] = buffer[offset+i];
+
+	}
+
+	return i;
+}
+
