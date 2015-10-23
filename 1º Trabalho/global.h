@@ -1,6 +1,7 @@
 #ifndef HEADER_FILE
 #define HEADER_FILE
 
+#include "filefunc.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,6 +23,8 @@
 #define RECETOR 1
 
 #define BUFFLENGTH 1000000
+
+#define DATAMAXSIZE 512
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
