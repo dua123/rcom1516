@@ -182,9 +182,9 @@ long packup_control(char * res, int command, unsigned int pack_amount, char * fi
 
     res[1] = 0; //T1 File size
     res[2] = 2; //T1 Amount of V1 octets
-    res[3] = (uint8_t) pack_amount / 256;
-    res[4] = (uint8_t) pack_amount % 256; //V1
-    
+    res[3] = pack_amount / 256;
+    res[4] = pack_amount % 256; //V1
+
     res[5] = 1; //T2 File size
     res[6] = strlen(file_name);
 
@@ -212,8 +212,25 @@ int unpack_data(char * res, uint8_t n_seq, char * data)
     return 0;
 }
 
-int unpack_control()
+int unpack_control(char * pak, int command, char * file_name)
 {
 
-    return 0;
+    if (command != pak[0] )
+    {
+        printf("unpack_control(): Wrong expected C value\n");
+        return -1;
+    }
+
+    int pack_amount = 256 * (uint8_t) pak[3] + (uint8_t) pak[4];
+
+    int str_length = (uint8_t) pak[6];
+    strcpy(file_name, &pak[7]);
+
+    if (strlen(file_name) != str_length)
+    {
+        printf("unpack_control(): String and its length don't match\n");
+        return -1;
+    }
+
+    return pack_amount;
 }

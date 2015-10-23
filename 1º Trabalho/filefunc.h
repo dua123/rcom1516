@@ -16,7 +16,7 @@ int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_s
 long packup_data(char * res, int n_seq, char * data, long data_size);
 long packup_control(char * res, int command, unsigned int pack_amount, char * file_name);
 int unpack_data(char * res, uint8_t n_seq, char * data);
-int unpack_control();
+int unpack_control(char * pak, int command, char * file_name);
 
 
 #endif

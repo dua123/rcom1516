@@ -21,6 +21,12 @@ int main(){
 		data[i] = 0x00;
 	if (packup_control(res2, 1, 500, "Hello, World!") == -1)
 		printf("packup_control(): FALHOU!");
+
+	char nome[128]; int n_pacotes;
+	if ( (n_pacotes = unpack_control(res2, 1, nome)) == -1)
+		printf("unpack_control(): FALHOU!");
 	
+	printf("Empacotamento e desempacotamento de comandos bem sucedidos! \n nome: %s, n_pacotes: %d\n", nome, n_pacotes);
+
 	return 0;
 }
