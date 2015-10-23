@@ -20,32 +20,16 @@
      
     int main(int argc, char** argv)
     {
-            SET[0]=0x7E;
-            SET[1]=0x03;
-            SET[2]=0x07;
-            SET[3]=0x00;
-            SET[4]=0x7E;
-     
-            UA[0]=0x7E;
-            UA[1]=0x03;
-            UA[2]=0x03;
-            UA[3]=0xFF; // aplicacao do xor ^
-            UA[4]=0x7E;
-     
-            DISC[0]=0x7E;
-            DISC[1]=0x03;
-            DISC[2]=0x0B;
-            DISC[3]=0x00;
-            DISC[4]=0x7E;
-     
-            struct termios oldtio,newtio;
-            int i, sum = 0, speed = 0;
-               
-            if ( (argc < 2) || (strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS4", argv[1])!=0) )
-            {
-                    printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS4\n");
-                    exit(1);
-            }
+
+
+    struct termios oldtio,newtio;
+    int i, sum = 0, speed = 0;
+       
+    if ( (argc < 2) || (strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS4", argv[1])!=0) )
+    {
+            printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS4\n");
+            exit(1);
+    }
       /*
         Open serial port device for reading and writing and not as controlling tty
         because we don't want to get killed if linenoise sends CTRL-C.
@@ -92,14 +76,20 @@
              // instala  rotina que atende interrupcao
         printf("New termios structure set\n");
      
-            if (llopen() == 1)
-                    printf("Falhou \n");
-     
-     
-            if (llclose() == 1)
-                    printf("Falhou \n");
-     
+
+
+	if (llopen() == 1)
+		printf("Falhou \n");
+	else		
+		printf("llopen(): SUCESSO \n");
+
+	if (llclose() == 1)
+		printf("Falhou \n");
+	else		
+		printf("llcose(): SUCESSO \n");
            
+
+
             //Test_a_Lot();
            
      
@@ -347,30 +337,30 @@
     int Test_a_Lot(){
            
            
-            //---------------------------------------------------
-            char test[256]= {0x1A,0x2D,0x7E,0x5E,0x7D,0x4B,0x7D,0x5D}, text[513]={}, tempt[256]={};
+	//---------------------------------------------------
+	char test[256]= {0x1A,0x2D,0x7E,0x5E,0x7D,0x4B,0x7D,0x5D}, text[513]={}, tempt[256]={};
+
+	byte_stuffing_encode(test, text);
+	de_stuffing(text,tempt);
+
+	if(strcmp(test, tempt) == 0)
+	{
+	    printf("\n\n Byte Stuffing e decoding bem sucedido\n");
+	}
+
+	char buf_ficheiro[BUFFLENGTH];
+	char buf_resultado[BUFFLENGTH];
+	long file_size = file_to_buffer(buf_ficheiro, "image1.jpg");
+	if (file_size == -1)
+	{
+	  perror("file_to_buffer()");
+	exit(-1);
+}
      
-            byte_stuffing_encode(test, text);
-            de_stuffing(text,tempt);
-     
-            if(strcmp(test, tempt) == 0)
-            {
-                    printf("\n\n Byte Stuffing e decoding bem sucedido\n");
-            }
-     
-            char buf_ficheiro[BUFFLENGTH];
-            char buf_resultado[BUFFLENGTH];
-            long file_size = file_to_buffer(buf_ficheiro, "image1.jpg");
-            if (file_size == -1)
-            {
-          perror("file_to_buffer()");
-          exit(-1);
-        }
-     
-        int progress = 0;
-        char chunk[256];
-        while (progress < file_size)
-        {
+	int progress = 0;
+	char chunk[256];
+	while (progress < file_size)
+	{
             progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
            
             if ( buffer_to_file(chunk, "image2.jpg", 256) == -1) {
