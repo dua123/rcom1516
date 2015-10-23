@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <errno.h>
 
+
 #define FALSE 0
 #define TRUE 1
 
@@ -34,8 +35,8 @@
 #define CUA 0x03
 #define BCCR 0x00
 #define BCCE 0xFF
-//#define CRR 0x21 ou 0x01
-//#define CREJ 0x25 ou 0x05
+#define CRR(r) ((r << 5 )|1)
+#define CREJ(r) ((r << 5 )|5)
 
 
 

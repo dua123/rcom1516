@@ -5,12 +5,11 @@
      
      
     #include "global.h"
-     
+    #include "filefunc.h"
      
     volatile int STOP=FALSE;
     int fd,c, res, timeouts = 0;
     char buf[5];
-    int* de_stuffing(char * trama,char * res);
     void atende();
      
      
@@ -215,8 +214,7 @@
             return 0;
            
     }
-     
-    void atende()                   // atende alarme
+         void atende()                   // atende alarme
     {
             if (STOP == FALSE && timeouts < 5)
             {
@@ -229,50 +227,6 @@
                 timeouts = 0;
             }
     }
-     
-    int* de_stuffing(char * trama,char * res)
-    {
-            int i, j=0;    
-           
-            for(i = 0; i < strlen(trama); i++, j++)
-            {
-                    printf("\n%#X", trama[i]);
-                   
-     
-                    if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
-                    {
-                            res[j] = 0x7E;
-                            printf("   %#X", res[j]);
-                            printf("\n%#X", trama[i+1]);
-                            i++;
-                    }
-                    else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
-                    {
-                            res[j] = 0x7D;
-                            printf("   %#X", res[j]);
-                            printf("\n%#X", trama[i+1]);
-                            i++;
-                    }
-                    else if(trama[i] == 0x7E)
-                    {
-                    }
-                    else
-                    {
-                            res[j] = trama[i];
-                            printf("   %#X", res[j]);
-                    }
-     
-            }
-            printf("\n");
-           
-            return 0;
-    }
-     
-     
-     
-    int Test_a_Lot()
-    {
-           
-           
-    }
 
+     
+ 
