@@ -1,6 +1,6 @@
 CC = gcc 
 CFLAGS = -o 
-LIBRARIES = global.h
+LIBRARIES = global.h filefunc.h
 
 emissor: enviar.c recetor
 	$(CC) enviar.c $(LIBRARIES) $(CFLAGS) enviar 

@@ -26,9 +26,22 @@
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 
-unsigned char SET[5];
-unsigned char UA[5];
-unsigned char DISC[5];
+#define FLAG 0x7e
+#define AE 0x03
+#define AR 0x01
+#define CSET 0x07
+#define CDISC 0x0b
+#define CUA 0x03
+#define BCCR 0x00
+#define BCCE 0xFF
+//#define CRR 0x21 ou 0x01
+//#define CREJ 0x25 ou 0x05
+
+
+
+unsigned char SET[5]={FLAG, AE, CSET ,AR,FLAG };
+unsigned char UA[5]={FLAG,AE,AE,BCCE,FLAG};
+unsigned char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
 
 
