@@ -297,3 +297,25 @@ int unpack_control(char * pak, int command, char * file_name)
 
     return pack_amount;
 }
+int Fazer_trama(int tamanho_dados, char * dados, int Controlo, char * res){
+	
+	int i =0;
+	if(tamanho_dados>516)
+		return -1;	
+	res = malloc ((sizeof (char))*(tamanho_dados+6));
+	res[0] = FLAG;
+	//res[1] =
+	//res[2]
+	//res[3]
+	//res[4]
+	//res[5]
+	for(i=0;i<tamanho_dados;i++)
+		res[6+i] = dados[i];
+	res[6+i]=FLAG;
+	
+
+
+
+}
+
+
