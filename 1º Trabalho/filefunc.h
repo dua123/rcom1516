@@ -5,7 +5,7 @@
 #include "global.h"
 
 
-
+void init(int argc, char** argv);
 int byte_stuffing_encode(char * trama, char * res);
 int de_stuffing(char * trama,char * res);
 long file_to_buffer(char * buffer, char * name);

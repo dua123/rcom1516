@@ -47,7 +47,7 @@ static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
 static char UA[5]={FLAG,AE,AE,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
-
-
+extern int fd;
+extern struct termios oldtio,newtio;
 
 #endif

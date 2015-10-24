@@ -1,5 +1,69 @@
 #include "filefunc.h"
 
+int fd;
+struct termios oldtio,newtio;
+
+void init(int argc, char** argv)
+{
+    
+
+    if (    (argc < 2) ||
+            ((strcmp("/dev/ttyS0", argv[1])!=0) &&
+            (strcmp("/dev/ttyS1", argv[1])!=0) &&
+            (strcmp("/dev/ttyS2", argv[1])!=0) &&
+            (strcmp("/dev/ttyS3", argv[1])!=0) &&
+            (strcmp("/dev/ttyS4", argv[1])!=0) )
+        ) 
+    {
+          printf("Usage:\tnserial SerialPort\n\tex: app /dev/ttyS4\n");
+          exit(1);
+    }
+
+    /*
+        Open serial port device for reading and writing and not as controlling tty
+        because we don't want to get killed if linenoise sends CTRL-C.
+    */
+ 
+    fd = open(argv[1], O_RDWR | O_NOCTTY );
+    if (fd <0) 
+    {
+        perror(argv[1]); exit(-1); 
+    }
+ 
+    if ( tcgetattr(fd,&oldtio) == -1) /* save current port settings */
+    { 
+      perror("tcgetattr");
+      exit(-1);
+    }
+
+
+    bzero(&newtio, sizeof(newtio));
+    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+ 
+    /* set input mode (non-canonical, no echo,...) */
+    newtio.c_lflag = 0;
+ 
+    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
+    /*
+        VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a
+        leitura do(s) próximo(s) caracter(es)
+    */
+
+    tcflush(fd, TCIOFLUSH);
+ 
+    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+
+    printf("New termios structure set\n");
+
+}
+
+
 
 int byte_stuffing_encode(char * trama, char * res)
 {
@@ -43,96 +107,96 @@ int byte_stuffing_encode(char * trama, char * res)
  
 int de_stuffing(char * trama,char * res)
 {
-        int i, j=0;    
-       
-        for(i = 0; i < strlen(trama); i++, j++)
-        {
-                printf("\n%#X", trama[i]);
-               
- 
-                if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
-                {
-                        res[j] = 0x7E;
-                        printf("   %#X", res[j]);
-                        printf("\n%#X", trama[i+1]);
-                        i++;
-                }
-                else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
-                {
-                        res[j] = 0x7D;
-                        printf("   %#X", res[j]);
-                        printf("\n%#X", trama[i+1]);
-                        i++;
-                }
-                else if(trama[i] == 0x7E)
-                {
-                }
-                else
-                {
-                        res[j] = trama[i];
-                        printf("   %#X", res[j]);
-                }
- 
-        }
-        printf("\n");
-       
-        return 0;
+    int i, j=0;    
+   
+    for(i = 0; i < strlen(trama); i++, j++)
+    {
+            printf("\n%#X", trama[i]);
+           
+
+            if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
+            {
+                    res[j] = 0x7E;
+                    printf("   %#X", res[j]);
+                    printf("\n%#X", trama[i+1]);
+                    i++;
+            }
+            else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
+            {
+                    res[j] = 0x7D;
+                    printf("   %#X", res[j]);
+                    printf("\n%#X", trama[i+1]);
+                    i++;
+            }
+            else if(trama[i] == 0x7E)
+            {
+            }
+            else
+            {
+                    res[j] = trama[i];
+                    printf("   %#X", res[j]);
+            }
+
+    }
+    printf("\n");
+   
+    return 0;
 }
  
 long file_to_buffer(char * buffer, char * name)
 {
-        FILE * fp = fopen(name, "r");
-        long file_size;
- 
-        if (fp != NULL)
-        {
-                //obtain file size
-                fseek(fp, 0, SEEK_END);
-                file_size = ftell(fp);
-                fseek(fp, 0, SEEK_SET);
- 
-                //Read the file
-                if (fread(buffer, sizeof(char), file_size, fp) == 0 )
-                        printf("file_to_buffer(): Erro a ler ficheiro \n");
- 
- 
-                fclose(fp);
- 
- 
-        }
-        else
-        {
-                printf("file_to_buffer(): Erro a abrir ficheiro \n");
-                return -1;
-        }
- 
-        printf("file_to_buffer(): Terminou com sucesso \n");
-        printf("file_to_buffer(): Tamanho do ficheiro: %lu \n", file_size);
-        return file_size;
+    FILE * fp = fopen(name, "r");
+    long file_size;
+
+    if (fp != NULL)
+    {
+            //obtain file size
+            fseek(fp, 0, SEEK_END);
+            file_size = ftell(fp);
+            fseek(fp, 0, SEEK_SET);
+
+            //Read the file
+            if (fread(buffer, sizeof(char), file_size, fp) == 0 )
+                    printf("file_to_buffer(): Erro a ler ficheiro \n");
+
+
+            fclose(fp);
+
+
+    }
+    else
+    {
+            printf("file_to_buffer(): Erro a abrir ficheiro \n");
+            return -1;
+    }
+
+    printf("file_to_buffer(): Terminou com sucesso \n");
+    printf("file_to_buffer(): Tamanho do ficheiro: %lu \n", file_size);
+    return file_size;
 }
  
  
 int buffer_to_file(char * buffer, char * name, long file_size)
 {
-        FILE * fp = fopen(name, "a+");
- 
-        fwrite(buffer, sizeof(char), file_size, fp);
- 
-        fclose(fp);
- 
-        return 0;
+    FILE * fp = fopen(name, "a+");
+
+    fwrite(buffer, sizeof(char), file_size, fp);
+
+    fclose(fp);
+
+    return 0;
 }
  
 int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_size)
 {
-        int i = 0;
-        for (; i < chunk_size && offset+i < file_size; i++)
-        {
-                res[i] = buffer[offset+i];
- 
-        }
- 
-        return i;
+    int i = 0;
+    for (; i < chunk_size && offset+i < file_size; i++)
+    {
+            res[i] = buffer[offset+i];
+
+    }
+
+    return i;
 }
 
 long packup_data(char * res, int n_seq, char * data, long data_size)
