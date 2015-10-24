@@ -12,16 +12,17 @@
     void atende();
     int llopen();
     int llclose(); 
-    int Test_a_Lot();
+    void Test_a_Lot();
 
     int main(int argc, char** argv)
     {
 
 
     struct termios oldtio,newtio;
-    int i, sum = 0, speed = 0;
        
-    if ( (argc < 2) || (strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS4", argv[1])!=0) )
+    if ( (argc < 2) 
+        || ((strcmp("/dev/ttyS0", argv[1])!=0) && (strcmp("/dev/ttyS4", argv[1])!=0))
+        )
     {
             printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS4\n");
             exit(1);
@@ -198,7 +199,7 @@
      
 
      
-    int Test_a_Lot(){
+    void Test_a_Lot(){
            
            
 	//---------------------------------------------------

@@ -1,7 +1,6 @@
 #include "filefunc.h"
 
 
-
 int byte_stuffing_encode(char * trama, char * res)
 {
        

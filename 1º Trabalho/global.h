@@ -1,19 +1,19 @@
 #ifndef HEADER_FILE
 #define HEADER_FILE
 
-#include "filefunc.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <sys/types.h>	
+#include <sys/stat.h>	
 #include <fcntl.h>
+#include <stdio.h>		
+#include <unistd.h>		
 #include <termios.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <signal.h>
-#include <errno.h>
+#include <stdlib.h>		
+#include <string.h>		
+#include <strings.h>	
+#include <signal.h>		
+#include <errno.h>		
+#include <stdint.h>
+
 
 
 #define FALSE 0
@@ -43,9 +43,9 @@
 
 
 
-unsigned char SET[5]={FLAG, AE, CSET ,AR,FLAG };
-unsigned char UA[5]={FLAG,AE,AE,BCCE,FLAG};
-unsigned char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
+static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
+static char UA[5]={FLAG,AE,AE,BCCE,FLAG};
+static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
 
 

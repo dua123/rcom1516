@@ -1,10 +1,11 @@
 CC = gcc 
-CFLAGS = -o 
-LIBRARIES = global.h
+CFLAGS = -Wall -o
+LIBRARIES = global.h filefunc.h
+FILES =  filefunc.c 
 
-emissor: enviar.c recetor 
-	$(CC) enviar.c  $(LIBRARIES) filefunc.c filefunc.h $(CFLAGS) enviar 
-recetor: receber.c
-	$(CC) receber.c $(LIBRARIES) filefunc.c filefunc.h $(CFLAGS) receber
+emissor: enviar.c $(FILES) $(LIBRARIES) 
+	$(CC) enviar.c  $(FILES) $(CFLAGS) enviar 
+recetor: receber.c $(FILES) $(LIBRARIES) 
+	$(CC) receber.c $(FILES) $(CFLAGS) receber
 
 

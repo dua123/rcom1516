@@ -2,9 +2,6 @@
 
     /*Non-Canonical Input Processing*/
      
-     
-     
-    #include "global.h"
     #include "filefunc.h"
      
     volatile int STOP=FALSE;

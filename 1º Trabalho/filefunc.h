@@ -2,10 +2,8 @@
 #define FILEFUNC
 
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "global.h"
+
 
 
 int byte_stuffing_encode(char * trama, char * res);
