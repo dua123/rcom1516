@@ -14,7 +14,7 @@
 
     int main(int argc, char** argv)
     {
-
+	user = EMISSOR;
     //init
     init(argc, argv);
      

@@ -10,7 +10,7 @@ void atende();
      
     int main(int argc, char** argv)
     {      
-
+	user = RECETOR;
     //init
     init(argc, argv);
      

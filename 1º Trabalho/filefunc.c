@@ -1,13 +1,13 @@
 #include "filefunc.h"
 
-int fd;
+int fd,fd1;
 struct termios oldtio,newtio;
 
 void init(int argc, char** argv)
 {
     
 
-    if (    (argc < 2) ||
+    if (    (argc < 3) ||
             ((strcmp("/dev/ttyS0", argv[1])!=0) &&
             (strcmp("/dev/ttyS1", argv[1])!=0) &&
             (strcmp("/dev/ttyS2", argv[1])!=0) &&
@@ -18,6 +18,18 @@ void init(int argc, char** argv)
           printf("Usage:\tnserial SerialPort\n\tex: app /dev/ttyS4\n");
           exit(1);
     }
+	//verificao se existe o ficheiro pretendido 
+	//O_EXCL          error if create and file exists
+	if(user==RECETOR){
+		fd1 = open(argv[2], O_RDWR | O_NOCTTY | O_EXCL);
+	}else{
+		fd1 = open(argv[2], O_RDWR | O_NOCTTY );	
+	}
+	if (fd1 <0) 
+    {
+        perror(argv[2]); exit(-1); 
+    }
+	 //strcpy(filename, argv[2]); adicao do filename 
 
     /*
         Open serial port device for reading and writing and not as controlling tty
