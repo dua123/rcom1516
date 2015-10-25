@@ -142,12 +142,16 @@
     }
 
 int llread(){
-
+	
+	sleep(1);
+	int num;
 	printf("llread(): A enviar : \n");
 
 	if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
 		return 1;
-	printf(" numero de bytes %d \n",write(fd,buf,5));
+	num =write(fd,buf,5);
+	printf(" numero de bytes %d \n",num);
+	printf("%2x, %2x, %2x, %2x, %2x\n",buf[0],buf[1],buf[2],buf[3],buf[4]);
 
 	return 0;
 
