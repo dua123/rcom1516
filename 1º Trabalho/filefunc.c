@@ -29,7 +29,7 @@ void init(int argc, char** argv)
     {
         perror(argv[2]); exit(-1); 
     }
-	 //strcpy(filename, argv[2]); adicao do filename 
+	 strcpy(filename, argv[2]);// adicao do filename 
 
     /*
         Open serial port device for reading and writing and not as controlling tty
