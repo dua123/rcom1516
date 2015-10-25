@@ -6,6 +6,7 @@ volatile int STOP=FALSE;
 int c, res, timeouts = 0;
 char buf[5];
 void atende();
+int llread();
      
      
     int main(int argc, char** argv)
@@ -25,8 +26,11 @@ void atende();
 
     sleep(2);
 
+      if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+          perror("tcsetattr");
+          exit(-1);
+        }
      
-        tcsetattr(fd,TCSANOW,&oldtio);
         close(fd);
         return 0;
     }
@@ -171,5 +175,15 @@ void atende();
             }
     }
 
-     
+ int llread(){
+
+	printf("llread(): A enviar : \n");
+
+	res = read(fd,&buf,5);
+	
+
+	return 0;
+
+}  
+    
  

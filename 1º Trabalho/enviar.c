@@ -11,6 +11,7 @@
     void atende();
     int llopen();
     int llclose(); 
+	int llread();
 
     int main(int argc, char** argv)
     {
@@ -27,6 +28,11 @@
 		printf("Falhou \n");
 	else		
 		printf("llcose(): SUCESSO \n"); 
+
+	if (llread() == 1)
+		printf("Falhou \n");
+	else		
+		printf("llread(): SUCESSO \n"); 
 
         if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
           perror("tcsetattr");
@@ -134,6 +140,17 @@
             STOP = FALSE;
             return 0;
     }
-     
+
+int llread(){
+
+	printf("llread(): A enviar : \n");
+
+	if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
+		return 1;
+	printf(" numero de bytes %d \n",write(fd,buf,5));
+
+	return 0;
+
+}  
 
 
