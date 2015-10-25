@@ -305,14 +305,15 @@ int Fazer_trama(int tamanho_dados, char * dados, int Controlo, char * res){
 	res = malloc ((sizeof (char))*(tamanho_dados+6));
 	res[0] = FLAG;
 	res[1] = AE;
-	//res[2] =
-	//res[3] =Controlo;
-	//res[4]
-	//res[5]
+	res[2] = Controlo;
+	res[3] = BCCE;
+	res[4] = tamanho_dados;
 	for(i=0;i<tamanho_dados;i++)
 		res[6+i] = dados[i];
 	res[6+i]=FLAG;
 	
+	return 0;
+
 }
 int Desfazer_trama(char *dados, char * res){
 	
