@@ -21,7 +21,10 @@ int llread();
 
     if(llclose() == 1)
         printf("llclose(): Falhou\n");
-
+	if (llread() == 1)
+		printf("Falhou \n");
+	else		
+		printf("llread(): SUCESSO \n"); 
 
 
     sleep(2);

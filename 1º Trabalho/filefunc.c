@@ -7,7 +7,7 @@ void init(int argc, char** argv)
 {
     
 
-    if (    (argc < 3) ||
+    if (    (argc < 2) ||
             ((strcmp("/dev/ttyS0", argv[1])!=0) &&
             (strcmp("/dev/ttyS1", argv[1])!=0) &&
             (strcmp("/dev/ttyS2", argv[1])!=0) &&
@@ -20,7 +20,7 @@ void init(int argc, char** argv)
     }
 	//verificao se existe o ficheiro pretendido 
 	//O_EXCL          error if create and file exists
-	if(user==RECETOR){
+	/*if(user==RECETOR){
 		fd1 = open(argv[2], O_RDWR | O_NOCTTY | O_EXCL);
 	}else{
 		fd1 = open(argv[2], O_RDWR | O_NOCTTY );	
@@ -30,7 +30,7 @@ void init(int argc, char** argv)
         perror(argv[2]); exit(-1); 
     }
 	 strcpy(filename, argv[2]);// adicao do filename 
-
+*/
     /*
         Open serial port device for reading and writing and not as controlling tty
         because we don't want to get killed if linenoise sends CTRL-C.
