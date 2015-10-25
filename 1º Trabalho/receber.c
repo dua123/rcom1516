@@ -112,7 +112,7 @@ void atende();
                     usleep(50);
                     read(fd,&pak,5);
                    
-                    if (pak[0] == DISC[0] && pak[1] == DISC[1] && pak[2] == DISC[2] && pak[3] == DISC[3] && pak[4] == DISC[4])
+                    if ((char)pak[0] == (char)DISC[0] && (char)pak[1] == (char)DISC[1] && (char)pak[2] == (char)DISC[2] && (char)pak[3] == (char)DISC[3] && (char)pak[4] == (char)DISC[4])
                     {
                             printf("llclose(): Recebi DISC, a re-enviar DISC \n");
                             stopme = 1;
@@ -148,8 +148,7 @@ void atende();
                     }
                     else
                     {
-							printf("%2x, %2x, %2x, %2x, %2x\n", pak[0],pak[1],pak[2],pak[3],pak[4]);
-printf("%2x, %2x, %2x, %2x, %2x\n", UA[0],UA[1],UA[2],UA[3],UA[4]);
+
                             return 1;
                     }
             }
