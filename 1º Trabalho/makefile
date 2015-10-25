@@ -1,5 +1,5 @@
 CC = gcc 
-CFLAGS = -o
+CFLAGS = -Wall -o
 LIBRARIES = global.h filefunc.h
 FILES =  filefunc.c 
 
