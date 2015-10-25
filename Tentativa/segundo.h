@@ -5,6 +5,8 @@
 
 void print_func();
 void setup();
+int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
+
 
 
 
