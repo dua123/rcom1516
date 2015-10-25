@@ -3,28 +3,44 @@
 
 int main(){
 
-	char data[DATAMAXSIZE];
-	char unpak[DATAMAXSIZE];
-	int i = 0;for(; i < 280; i++)
-		data[i] = 0x11;
-	char res[516];
-	if (packup_data(res, 5, data, 280) == -1)
-		printf("packup_data(): FALHOU!");
-	if (unpack_data(unpak, 5, res) == -1)
-		printf("unpack_data(): FALHOU!");
-	if ( memcmp(data, unpak, 280) == 0)
-		printf("Empacotamento e desempacotamento de dados bem sucedidos! \n");
+	char dados[5] = {0x01,0x02,0x03,0x04,0x05};
+	char packet[DATAMAXSIZE];
+	char stufpak[STUFFED_PACKET_MAXSIZE];
+	char bcc2[1] = {0x00};
+	char * frame;
+	char * de_framed;
+	char bcc2_res[1];
+	char un_stuf[DATAMAXSIZE];
+	char un_pak[DATAMAXSIZE];
 
-	char res2[516];for(; i < 280; i++)
-		data[i] = 0x00;
-	if (packup_control(res2, 1, 500, "Hello, World!") == -1)
-		printf("packup_control(): FALHOU!");
+	int tamanho = packup_data(packet, 0, dados, 5);
+	if( tamanho == -1)
+		printf("Falhou no packup_data()\n");
 
-	char nome[128]; int n_pacotes;
-	if ( (n_pacotes = unpack_control(res2, 1, nome)) == -1)
-		printf("unpack_control(): FALHOU!");
+	int stuffcount = byte_stuffing_encode(packet, stufpak);
+	if( stuffcount == -1)
+		printf("Falhou no byte_stuffing_encode()\n");
+
+	if( Fazer_trama(tamanho+stuffcount, stufpak, 0, frame, bcc2) == -1)
+		printf("Falhou no Fazer_trama()\n");
+
+	if( Desfazer_trama(frame, de_framed, 0, bcc2_res) == -1)
+		printf("Falhou no Desfazer_trama() \n");
+	if( memcmp (&bcc2, &bcc2_res, 1) != 0)
+		printf("Falhou no Desfazer_trama(), bcc's \n");
+		free(frame);
+
+
+
+	//if( == -1)
+	//	printf("Falhou no \n");
+
+	//if( == -1)
+	//	printf("Falhou no \n");
+
+	//if( == -1)
+	//	printf("Falhou no \n");
 	
-	printf("Empacotamento e desempacotamento de comandos bem sucedidos! \n nome: %s, n_pacotes: %d\n", nome, n_pacotes);
-
+	printf("SUCESSO! \n");
 	return 0;
 }

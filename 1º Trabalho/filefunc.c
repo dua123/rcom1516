@@ -68,41 +68,29 @@ void init(int argc, char** argv)
 int byte_stuffing_encode(char * trama, char * res)
 {
        
-        int i, j=0;    
-       
-        for(i = 0; i < strlen(trama); i++, j++)
-        {
-                printf("\n%#X", trama[i]);
-               
- 
-                if (trama[i]  == 0x7E)
-                {
-                        res[j] = 0x7D;
-                        printf("   %#X", res[j]);
-                        j++;
-                        res[j] = 0x5E;
-                        printf("   %#X", res[j]);
-                }
-                else if(trama[i]  == 0x7D)
-                {
-                        res[j] = 0x7D;
-                        printf("   %#X", res[j]);
-                        j++;
-                        res[j] = 0x5D;
-                        printf("   %#X", res[j]);
-                }
-                else{
-                        res[j] = trama[i];
-                        printf("   %#X", res[j]);
- 
-                }
- 
-        }
-        res[j] = 0x7E;
-        printf("\n       %#X\n", res[j]);
- 
-       
-        return 0;
+    int i, j=0; 
+    int count = 0;   
+   
+    for(i = 0; i < strlen(trama); i++, j++)
+    {
+            if (trama[i]  == 0x7E)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5E;
+            }
+            else if(trama[i]  == 0x7D)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5D;
+            }
+            else{
+                    res[j] = trama[i];
+            }
+    }
+    res[j] = 0x7E; 
+    return count;
 }
  
 int de_stuffing(char * trama,char * res)
@@ -199,9 +187,9 @@ int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_s
     return i;
 }
 
-long packup_data(char * res, int n_seq, char * data, long data_size)
+int packup_data(char * res, int n_seq, char * data, int data_size)
 {
-    if(data_size > 512 )
+    if(data_size > 256 )
     {
         printf("packup_data(): Data read after stuffing was larger than maximum 512 byte\n");
         return -1;
@@ -233,7 +221,7 @@ long packup_data(char * res, int n_seq, char * data, long data_size)
     return data_size+4;
 }
 
-long packup_control(char * res, int command, unsigned int pack_amount, char * file_name)
+int packup_control(char * res, int command, unsigned int pack_amount, char * file_name)
 {
     if (! (command == 1 || command == 2) )
     {
@@ -252,7 +240,8 @@ long packup_control(char * res, int command, unsigned int pack_amount, char * fi
     res[6] = strlen(file_name);
 
     strcpy(&res[7], file_name);
-    return 0;
+
+    return (7 + sizeof(file_name));
 }
 
 int unpack_data(char * res, uint8_t n_seq, char * data)
@@ -297,65 +286,58 @@ int unpack_control(char * pak, int command, char * file_name)
 
     return pack_amount;
 }
-int Fazer_trama(int tamanho_dados, char * dados, int Controlo, char * res){
-	
-	int i =0;
-	if(tamanho_dados>516)
+
+int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
+
+	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
 		return -1;	
 	res = malloc ((sizeof (char))*(tamanho_dados+6));
+
 	res[0] = FLAG;
 	res[1] = AE;
-	res[2] = Controlo;
-	res[3] = BCCE;
-	res[4] = tamanho_dados;
-	for(i=0;i<tamanho_dados;i++)
-		res[6+i] = dados[i];
-	res[6+i]=FLAG;
+	res[2] = CDATA(controlo);
+	res[3] = (AE ^ CDATA(controlo));
+
+    int i =0; char bcc;
+    memcpy(&res[4], &dados[0], tamanho_dados);
+    memcpy(&res[4+tamanho_dados],&bcc2, 1);
+	res[4+tamanho_dados+1]=FLAG;
 	
 	return 0;
 
 }
-int Desfazer_trama(char *dados, char * res){
+int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 	
-	int i =0,y;
-	int state =0;
-	int tamanho_dados;
-	while(state!=5){
-		switch(state){
-			case 0://verifica se flag
-				if(dados[i]== FLAG)
-					state++;
-			break;
-			case 1:// verificar se AE
-				if(dados[i]== AE)
-					state++;
-				else	
-					state =0;
-			break;
-			case 2: //verifica o controlo
-				state++;
+	if(dados[0]!= FLAG)
+        return -1;
+    if(dados[1]!= AE)
+        return -1;
+    if(dados[2]!= CDATA(controlo))
+        return -1;
+    if(dados[3]== (AE ^ CDATA(controlo)))
+    	return -1;
 
-			break;
-			case 3: // verifica BCCe
-				if(dados[i]== BCCE)
-					state++;
-				else	
-					state =0;
-			break;
-			case 4: //pega o tamanha e entra no ciclo
-				tamanho_dados = atoi (dados[i]);
-				res = malloc ((sizeof (char))*(tamanho_dados+6));
-				for(y=0;y<tamanho_dados;y++,i++)
-				{
-					res[y] = dados[i];
-				}				
 
-					state++;
-			break;
 
-		}
-		i++;
-	}		
+    int i =0;
+    while (dados[4+i] != FLAG)
+    {
+        i++;
+        if (i > STUFFED_PACKET_MAXSIZE)  
+        {
+            return -1;
+        }
+    }
+    int tamanho_dados = i;
+
+
+    res = malloc ((sizeof (char))*(tamanho_dados));
+    memcpy(&res[0], &dados[4], tamanho_dados);
+    memcpy(&bcc2, &dados[4+tamanho_dados], 1);
+
+    if(dados[4+tamanho_dados+1]!= FLAG)
+        return -1;
+
 	return 0;
 
 }

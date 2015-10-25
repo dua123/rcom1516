@@ -24,7 +24,9 @@
 
 #define BUFFLENGTH 1000000
 
-#define DATAMAXSIZE 512
+#define DATAMAXSIZE 256
+#define PACKETMAXSIZE 260
+#define STUFFED_PACKET_MAXSIZE 520
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -40,6 +42,7 @@
 #define BCCE 0xFF
 #define CRR(r) ((r << 5 )|1)
 #define CREJ(r) ((r << 5 )|5)
+#define CDATA(s) (s << 5)
 
 #define TYPE_SET 	1
 #define TYPE_DISC 	2
@@ -48,7 +51,7 @@
 #define TYPE_REJ 	5
 
 
-#define MAX_SIZE 513
+
 static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
 static char UA[5]={FLAG,AE,AE,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
@@ -56,19 +59,8 @@ static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 extern int fd;
 extern struct termios oldtio,newtio;
 
-struct applicationLayer {
-	int fileDescriptor;/*Descritor correspondente à porta série*/
-	int status; /*TRANSMITTER | RECEIVER*/
-};
 
-struct linkLayer {
-	char port[20]; /*Dispositivo /dev/ttySx, x = 0, 1*/
-	int baudRate; /*Velocidade de transmissão*/
-	unsigned int sequenceNumber;   /*Número de sequência da trama: 0, 1*/
-	unsigned int timeout; /*Valor do temporizador: 1 s*/
-	unsigned int numTransmissions; /*Número de tentativas em caso de falha*/
-	char frame[MAX_SIZE]; /*Trama**/
-};
+
 
 
 #endif
