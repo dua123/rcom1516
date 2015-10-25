@@ -140,7 +140,7 @@ void atende();
                     usleep(50);
                     res = read(fd,&pak,5);
                     printf("llclose(): %d bytes read\n", res);
-                    if (pak[0] == UA[0] && pak[1] == UA[1] && pak[2] == UA[2] && pak[3] == UA[3] && pak[4] == UA[4])
+                    if ((char)pak[0] == (char)UA[0] && (char)pak[1] == (char)UA[1] && (char)pak[2] == (char)UA[2] && (char)pak[3] == (char)UA[3] && (char)pak[4] == (char)UA[4])
                     {
                             printf("llclose(): Recebi DISC, vou enviar UA \n");
                            
@@ -148,6 +148,8 @@ void atende();
                     }
                     else
                     {
+							printf("%2x, %2x, %2x, %2x, %2x\n", pak[0],pak[1],pak[2],pak[3],pak[4]);
+printf("%2x, %2x, %2x, %2x, %2x\n", UA[0],UA[1],UA[2],UA[3],UA[4]);
                             return 1;
                     }
             }

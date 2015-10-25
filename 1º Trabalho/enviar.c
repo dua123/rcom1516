@@ -108,7 +108,7 @@
                     usleep(50);
                     res = read(fd,&pak,5);
                     printf("llclose(): %d bytes read\n", res);
-                    if (pak[0] == DISC[0] && pak[1] == DISC[1] && pak[2] == DISC[2] && pak[3] == DISC[3] && pak[4] == DISC[4])
+                    if ((char) pak[0] == (char) DISC[0] && (char) pak[1] == (char)DISC[1] && (char)pak[2] == (char)DISC[2] && (char)pak[3] == (char)DISC[3] && (char)pak[4] == (char)DISC[4])
                     {
                             printf("llclose(): Recebi DISC, vou enviar UA \n");
                            
