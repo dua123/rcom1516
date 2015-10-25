@@ -86,7 +86,8 @@ int byte_stuffing_encode(char * trama, char * res)
                     res[j] = 0x5D;
             }
             else{
-                    res[j] = trama[i];
+                   res[j] = trama[i];
+                    
             }
     }
     return count;
