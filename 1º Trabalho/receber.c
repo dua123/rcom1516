@@ -21,6 +21,7 @@ int llread();
 
     if(llclose() == 1)
         printf("llclose(): Falhou\n");
+	
 	if (llread() == 1)
 		printf("Falhou \n");
 	else		
@@ -168,7 +169,7 @@ int llread();
     {
             if (STOP == FALSE && timeouts < 5)
             {
-                    printf("llclose(): Ocorreu time out, re-enviar DISC \n");
+                    printf(" Ocorreu time out, re-enviar DISC \n");
                     timeouts++;
                     res = write(fd,buf,5);
                     alarm(3);
@@ -181,8 +182,68 @@ int llread();
  int llread(){
 
 	printf("llread(): A enviar : \n");
+	STOP=FALSE;
 
-	res = read(fd,&buf,5);
+     unsigned char * receive = SET;
+     unsigned char pak;
+     int state = 0;
+     while (STOP==FALSE) {
+             usleep(50);
+             read(fd,&pak,1);
+     		printf("%2x : \n",pak);
+             switch (state)
+             {
+             		case 0: //Espera FLAG - F
+                    	if (pak == FLAG)
+                       	{	
+							buf[0]=FLAG;
+                           state++;
+                       	}
+                     break;
+					case 1: //Espera AE ou AR
+                    	if (pak == AE)
+                       	{
+						   buf[1]=AE;
+                           state++;
+                       	}else if(pak==AR){
+						   buf[1]=AR;
+                           state++;
+						}
+                     break;
+					case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
+                    	if (pak == CSET)
+                       	{
+						   buf[2]=CSET;
+                           state++;
+                       	}else if(pak==CDISC){
+						   buf[2]=CDISC;
+                           state++;
+						}//continuar mais tarde só para motivos de testes
+                     break;
+					case 3: //Espera xor entre buf[1])^buf[2]
+                    	if (pak == (char)(buf[1])^buf[2])
+                       	{
+						   buf[3]=(char)(buf[1])^buf[2];
+                           state++;
+                       	}
+                     break;
+					case 4: //Espera AE ou AR
+                    	if (pak == FLAG)
+                       	{
+						   buf[4]=FLAG;
+                           state++;
+                       	}
+                     break;
+					case 5: //Espera AE ou AR
+						STOP=TRUE;
+                     break;
+			}
+	}
+
+
+
+
+	printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
 	
 
 	return 0;
