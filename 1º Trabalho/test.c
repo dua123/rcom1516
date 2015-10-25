@@ -14,26 +14,46 @@ int main(){
 	char un_pak[DATAMAXSIZE];
 
 	int tamanho = packup_data(packet, 1, dados, 5);
+	printf("Tamanho apos empacotamento: %d\n", tamanho);
 	if( tamanho == -1)
 		printf("Falhou no packup_data()\n");
 
 	int stuffcount = byte_stuffing_encode(packet, stufpak);
+	printf("Tamanho acrescentado com stuffing: %d\n", stuffcount);
 	if( stuffcount == -1)
 		printf("Falhou no byte_stuffing_encode()\n");
+
 
 	if( Fazer_trama(tamanho+stuffcount, stufpak, 0, frame, bcc2) == -1)
 		{printf("Falhou no Fazer_trama()\n");	return -1;}
 
-	if( Desfazer_trama(frame, de_framed, 0, bcc2_res) == -1)
+
+	int tamanho_deframed = Desfazer_trama(frame, de_framed, 0, bcc2_res);
+	printf("Tamanho apos remover trama: %d\n", tamanho_deframed);
+	if( tamanho_deframed == -1)
 		{printf("Falhou no Desfazer_trama() \n");return -1;}
+
 	if( memcmp (&bcc2, &bcc2_res, 1) != 0)	
-		{printf("Falhou no Desfazer_trama(), bcc's \n");return -1;}
-	
+		{printf("Falhou no Desfazer_trama(), BCC's \n");return -1;}
+
+	if( memcmp (&de_framed, &stufpak, tamanho_deframed) != 0)	
+		{printf("Falhou no Desfazer_trama(), de_framed \n");return -1;}
 
 
 
-	//if( == -1)
-	//	printf("Falhou no \n");
+
+	int tamanho_destuffed = de_stuffing(de_framed,un_stuf);
+	printf("Tamanho removido: %d\n", tamanho_destuffed);
+	if( tamanho_destuffed == -1)
+		printf("Falhou no de_stuffing()\n");
+
+	int i;
+	for(i = 0; i < (tamanho_deframed-tamanho_destuffed); i++)
+		printf("Unstuffed: %2x, Packet_Original: %2x, comparison:%d \n", un_stuf[i] ,packet[i] , memcmp (&un_stuf[i], &packet[i], 1));
+
+	if( memcmp (&un_stuf, &packet, 1) != 0)	
+		{printf("Falhou no de_stuffing(), memcmp \n");return -1;}
+
 
 	//if( == -1)
 	//	printf("Falhou no \n");

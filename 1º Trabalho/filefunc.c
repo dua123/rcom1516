@@ -94,37 +94,28 @@ int byte_stuffing_encode(char * trama, char * res)
  
 int de_stuffing(char * trama,char * res)
 {
-    int i, j=0;    
+    int i, j=0;  
+    int count = 0;  
    
     for(i = 0; i < strlen(trama); i++, j++)
     {
-            printf("\n%#X", trama[i]);
-           
-
-            if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
-            {
-                    res[j] = 0x7E;
-                    printf("   %#X", res[j]);
-                    printf("\n%#X", trama[i+1]);
-                    i++;
-            }
-            else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
-            {
-                    res[j] = 0x7D;
-                    printf("   %#X", res[j]);
-                    printf("\n%#X", trama[i+1]);
-                    i++;
-            }
-            else
-            {
-                    res[j] = trama[i];
-                    printf("   %#X", res[j]);
-            }
-
+        if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
+        {
+                res[j] = 0x7E;
+                i++; count++;
+        }
+        else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
+        {
+                res[j] = 0x7D;
+                i++;count++;
+        }
+        else
+        {
+                res[j] = trama[i];
+        }
     }
-    printf("\n");
    
-    return 0;
+    return count;
 }
  
 long file_to_buffer(char * buffer, char * name)
@@ -242,6 +233,7 @@ int packup_control(char * res, int command, unsigned int pack_amount, char * fil
 
 int unpack_data(char * res, uint8_t n_seq, char * data)
 {
+
     if(data[0] != 0x00)
     {
         printf("unpack_data(): This wasn't a Data Packet\n");
@@ -327,15 +319,14 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
             return -1;
         }
     }
-    int tamanho_dados = i;
 
     memcpy(&res[0], &dados[4], i-1);
-    memcpy(&bcc2, &dados[3+i], 1);
+    memcpy(&bcc2, &dados[4+i-1], 1);
 
     if(dados[4+i]!= FLAG)
         return -1;
 
-	return 0;
+	return i-1;
 
 }
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
