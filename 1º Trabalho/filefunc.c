@@ -304,9 +304,9 @@ int Fazer_trama(int tamanho_dados, char * dados, int Controlo, char * res){
 		return -1;	
 	res = malloc ((sizeof (char))*(tamanho_dados+6));
 	res[0] = FLAG;
-	//res[1] =
-	//res[2]
-	//res[3]
+	res[1] = AE;
+	//res[2] =
+	//res[3] =Controlo;
 	//res[4]
 	//res[5]
 	for(i=0;i<tamanho_dados;i++)
