@@ -26,13 +26,8 @@
 	if (llclose() == 1)
 		printf("Falhou \n");
 	else		
-		printf("llcose(): SUCESSO \n");
-           
+		printf("llcose(): SUCESSO \n"); 
 
-
-            //Test_a_Lot();
-           
-     
         if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
           perror("tcsetattr");
           exit(-1);

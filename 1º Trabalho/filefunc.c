@@ -367,3 +367,33 @@ int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
 
 }
 
+
+int test_file_chunking(char * source_filename, char * dest_filename){
+    char buf_ficheiro[BUFFLENGTH];
+    char buf_resultado[BUFFLENGTH];
+    long file_size = file_to_buffer(buf_ficheiro, source_filename);
+    if (file_size == -1)
+    {
+      perror("file_to_buffer()");
+    exit(-1);
+    }
+
+    int progress = 0;
+    char chunk[256];
+    while (progress < file_size)
+    {
+        progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
+       
+        if ( buffer_to_file(chunk, dest_filename, 256) == -1) {
+        perror("buffer_to_file()");
+        exit(-1);
+        }
+
+        printf("progress: %d", progress);
+
+    }
+    file_to_buffer(buf_resultado, dest_filename);
+
+    if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
+                printf("SUCESSO");
+}
