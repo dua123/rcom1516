@@ -27,19 +27,20 @@
 #define DATAMAXSIZE 256
 #define PACKETMAXSIZE 260
 #define STUFFED_PACKET_MAXSIZE 520
+#define FRAME_MAXSIZE 526
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
 
 
-#define FLAG 0x7e
-#define AE 0x03
-#define AR 0x01
-#define CSET 0x07
-#define CDISC 0x0b
-#define CUA 0x03
-#define BCCR 0x00
-#define BCCE 0xFF
+#define FLAG 	0x7e
+#define AE 		0x03
+#define AR 		0x01
+#define CSET 	0x07
+#define CDISC 	0x0b
+#define CUA 	0x03
+#define BCCR 	0x00
+#define BCCE 	0xFF
 #define CRR(r) ((r << 5 )|1)
 #define CREJ(r) ((r << 5 )|5)
 #define CDATA(s) (s << 5)

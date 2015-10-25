@@ -89,7 +89,6 @@ int byte_stuffing_encode(char * trama, char * res)
                     res[j] = trama[i];
             }
     }
-    res[j] = 0x7E; 
     return count;
 }
  
@@ -115,9 +114,6 @@ int de_stuffing(char * trama,char * res)
                     printf("   %#X", res[j]);
                     printf("\n%#X", trama[i+1]);
                     i++;
-            }
-            else if(trama[i] == 0x7E)
-            {
             }
             else
             {
@@ -289,9 +285,10 @@ int unpack_control(char * pak, int command, char * file_name)
 
 int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
 
+
+
 	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
 		return -1;	
-	res = malloc ((sizeof (char))*(tamanho_dados+6));
 
 	res[0] = FLAG;
 	res[1] = AE;
@@ -301,7 +298,7 @@ int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char 
     int i =0; char bcc;
     memcpy(&res[4], &dados[0], tamanho_dados);
     memcpy(&res[4+tamanho_dados],&bcc2, 1);
-	res[4+tamanho_dados+1]=FLAG;
+	res[5+tamanho_dados] =  FLAG;
 	
 	return 0;
 
@@ -314,28 +311,28 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
         return -1;
     if(dados[2]!= CDATA(controlo))
         return -1;
-    if(dados[3]== (AE ^ CDATA(controlo)))
+    if( dados[3] != (AE ^ CDATA(controlo)) )
     	return -1;
 
 
 
-    int i =0;
+    int i = 0;
+
     while (dados[4+i] != FLAG)
     {
         i++;
         if (i > STUFFED_PACKET_MAXSIZE)  
         {
+            printf("Erro no tamanho dos dados\n");
             return -1;
         }
     }
     int tamanho_dados = i;
 
+    memcpy(&res[0], &dados[4], i-1);
+    memcpy(&bcc2, &dados[3+i], 1);
 
-    res = malloc ((sizeof (char))*(tamanho_dados));
-    memcpy(&res[0], &dados[4], tamanho_dados);
-    memcpy(&bcc2, &dados[4+tamanho_dados], 1);
-
-    if(dados[4+tamanho_dados+1]!= FLAG)
+    if(dados[4+i]!= FLAG)
         return -1;
 
 	return 0;
