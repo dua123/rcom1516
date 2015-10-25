@@ -65,13 +65,13 @@ void init(int argc, char** argv)
 
 
 
-int byte_stuffing_encode(char * trama, char * res)
+int byte_stuffing_encode(char * trama, char * res, int size)
 {
        
     int i, j=0; 
     int count = 0;   
    
-    for(i = 0; i < strlen(trama); i++, j++)
+    for(i = 0; i < size; i++, j++)
     {
             if (trama[i]  == 0x7E)
             {
@@ -93,12 +93,12 @@ int byte_stuffing_encode(char * trama, char * res)
     return count;
 }
  
-int de_stuffing(char * trama,char * res)
+int de_stuffing(char * trama,char * res, int size)
 {
     int i, j=0;  
     int count = 0;  
    
-    for(i = 0; i < strlen(trama); i++, j++)
+    for(i = 0; i < size; i++, j++)
     {
         if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
         {

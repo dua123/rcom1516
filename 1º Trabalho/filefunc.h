@@ -17,8 +17,8 @@ int unpack_control(char * pak, int command, char * file_name);
 int packup_data(char * res, int n_seq, char * data, int data_size);
 int unpack_data(char * res, uint8_t n_seq, char * data);
 
-int byte_stuffing_encode(char * trama, char * res);
-int de_stuffing(char * trama,char * res);
+int byte_stuffing_encode(char * trama, char * res, int size);
+int de_stuffing(char * trama,char * res, int size);
 
 int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2);
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
