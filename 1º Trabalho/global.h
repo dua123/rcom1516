@@ -41,6 +41,12 @@
 #define CRR(r) ((r << 5 )|1)
 #define CREJ(r) ((r << 5 )|5)
 
+#define TYPE_SET 	1
+#define TYPE_DISC 	2
+#define TYPE_UA 	3
+#define TYPE_RR 	4
+#define TYPE_REJ 	5
+
 
 #define MAX_SIZE 513
 static char SET[5]={FLAG, AE, CSET ,AR,FLAG };

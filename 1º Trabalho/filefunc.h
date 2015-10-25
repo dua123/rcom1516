@@ -16,6 +16,8 @@ long packup_control(char * res, int command, unsigned int pack_amount, char * fi
 int unpack_data(char * res, uint8_t n_seq, char * data);
 int unpack_control(char * pak, int command, char * file_name);
 int Fazer_trama(int tamanho_dados, char * dados, int Controlo, char * res);
+int Desfazer_trama(char *dados, char * res);
+int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
 
 
 #endif
