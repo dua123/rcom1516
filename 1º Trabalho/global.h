@@ -63,7 +63,10 @@ extern int fd;
 extern int user;
 extern struct termios oldtio,newtio;
 extern FILE * image_fd;
+
+
 extern char  filename[48];
+extern int total_number_packets;
 
 extern volatile int STOP;
 extern char Alarm_buffer[FRAME_MAXSIZE];

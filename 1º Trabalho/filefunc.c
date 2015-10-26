@@ -230,7 +230,10 @@ int packup_control(char * res, int command, unsigned int pack_amount, char * fil
     res[5] = 1; //T2 File size
     res[6] = strlen(file_name);
 
-    strcpy(&res[7], file_name);
+    memcpy(&res[7], file_name, strlen(file_name));
+
+    res[7 +  strlen(file_name) ] = 0;
+    res[8 +  strlen(file_name) ] = 0;
 
     return (7 + sizeof(file_name));
 }
@@ -268,7 +271,11 @@ int unpack_control(char * pak, int command, char * file_name)
     int pack_amount = 256 * (uint8_t) pak[3] + (uint8_t) pak[4];
 
     int str_length = (uint8_t) pak[6];
+    printf("%c\n", pak[7+8]);
+    printf("%c\n", pak[7+9]);
+
     strcpy(file_name, &pak[7]);
+
 
     if (strlen(file_name) != str_length)
     {
@@ -501,21 +508,22 @@ int llread(int app)
     {
 
         //VER A QUANTIDADE DE TRAMAS DE DADOS A ENVIAR
-        int chunk_amount = file_byte_size(filename);
-        printf("bytes: %d, ", chunk_amount);
-        if ((chunk_amount % 256) > 0)
-            chunk_amount = (chunk_amount / 256) + 1;
+        int total_number_packets = file_byte_size(filename);
+        printf("bytes: %d, ", total_number_packets);
+        if ((total_number_packets % 256) > 0)
+            total_number_packets = (total_number_packets / 256) + 1;
         else
-            chunk_amount = (chunk_amount / 256);
-        printf("chunks: %d\n", chunk_amount);
+            total_number_packets = (total_number_packets / 256);
+        printf("chunks: %d\n", total_number_packets);
 
 
         //MONTAR O COMANDO INCIAL
         char pack_command[PACKETMAXSIZE]; int ALTERNATING = 0;
-        int temp_size = packup_control(pack_command, PAK_CMD_FIRST, chunk_amount, filename);
+        int temp_size = packup_control(pack_command, PAK_CMD_FIRST, total_number_packets, filename);
 
         //ENVIAR A TRAMA DE INFORMACAO INICIAL
         envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
+        ALTERNATING = 1;
 
         return 0;
     }   
@@ -524,7 +532,8 @@ int llread(int app)
 
         //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
         int ALTERNATING = 0;
-        espera_e_responde_dados(TYPE_RR, ALTERNATING);
+        espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0);
+        ALTERNATING = 1;
 
         return 0;
     }
@@ -760,7 +769,7 @@ int envia_e_espera_superv(char * msg, char * res)
 	return -1;
 }
 
-int espera_e_responde_dados(int type, int s){
+int espera_e_responde_dados(int type, int s, int n_seq){
 
     unsigned char pak;
     char incoming_frame[FRAME_MAXSIZE];
@@ -833,8 +842,32 @@ int espera_e_responde_dados(int type, int s){
         }
     }
 
-    //Tirar eaders dos dados
     printf("PROGRESSO!\n");
+    usleep(50);
+    STOP = FALSE;
+
+    if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
+    {
+        //Tirar headers dos dados
+
+        char dados_deframed[STUFFED_PACKET_MAXSIZE];  
+        char bcc; //E preciso verificar
+        int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
+        char dados_destuffed[PACKETMAXSIZE];
+        de_stuffing(dados_deframed,dados_destuffed, temp_size);
+
+        int total_number_packets = unpack_control(dados_destuffed, type, filename);
+        printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
+
+        //Formular resposta
+
+        //Enviar
+
+    }   
+    else
+    {
+
+    }
 
     return 0;
 }
@@ -849,7 +882,7 @@ int envia_e_espera_dados(char * dados, int s, int size)
     Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
 
     //enviar
-    write(fd,framed_data,5);
+    write(fd,framed_data,temp_size+8);
 
     printf("PROGRESSO!\n");
 
