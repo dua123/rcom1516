@@ -4,7 +4,6 @@
  
 int c, res, timeouts = 0;
 char buf[FRAME_MAXSIZE];
-void atende();
      
      
 int main(int argc, char** argv)
@@ -31,101 +30,32 @@ int main(int argc, char** argv)
     else
     	printf("llopen(): SUCESSO\n");
 
+
+    if (llclose( RECETOR ) == 1)
+		printf("llclose():Falhou \n");
+	else		
+		printf("llcose(): SUCESSO \n"); 
+
 /*	
 	if (llread(RECETOR) == 1)
 		printf("llread(): Falhou \n");
 	else		
 		printf("llread(): SUCESSO \n"); 
 
-    if(llclose() == 1)
-        printf("llclose(): Falhou\n");
 */	
 
 
 
     sleep(2);
 
-      if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
-          perror("tcsetattr");
-          exit(-1);
-        }
-     
-        close(fd);
-        return 0;
-}
-
-     
-int llclose()
-{
-            //RECEBER DISC
-            unsigned char * receive = DISC;
-            unsigned char pak[5];
-            char stopme = 0;
-           
-            while (stopme == 0) {  
-                    usleep(50);
-                    read(fd,&pak,5);
-                   
-                    if ((char)pak[0] == (char)DISC[0] && (char)pak[1] == (char)DISC[1] && (char)pak[2] == (char)DISC[2] && (char)pak[3] == (char)DISC[3] && (char)pak[4] == (char)DISC[4])
-                    {
-                            printf("llclose(): Recebi DISC, a re-enviar DISC \n");
-                            stopme = 1;
-                    }
-            }
-           
-           
-            buf[0]=DISC[0];
-            buf[1]=DISC[1];
-            buf[2]=DISC[2];
-            buf[3]=DISC[3];
-            buf[4]=DISC[4];
-            (void) signal(SIGALRM, atende);
-
-            usleep(50);
-           
-            while(STOP==FALSE)
-            {
-                    alarm(3);
-                    res = write(fd,buf,5);
-                    printf("llclose(): %d bytes written\n", res);
-                   
-                    //RECEBER UA
-                    printf("llclose(): Vou esperar por UA \n");
-                    usleep(50);
-                    res = read(fd,&pak,5);
-                    printf("llclose(): %d bytes read\n", res);
-                    if ((char)pak[0] == (char)UA[0] && (char)pak[1] == (char)UA[1] && (char)pak[2] == (char)UA[2] && (char)pak[3] == (char)UA[3] && (char)pak[4] == (char)UA[4])
-                    {
-                            printf("llclose(): Recebi DISC, vou enviar UA \n");
-                           
-                            STOP = TRUE;
-                    }
-                    else
-                    {
-
-                            return 1;
-                    }
-            }
-           
-            STOP = FALSE;
-            return 0;
-           
-}
-
-	
-void atende()	// atende alarme
-{
-	if (STOP == FALSE && timeouts < 5)
-	{
-			printf(" Ocorreu time out, re-enviar DISC \n");
-			timeouts++;
-			res = write(fd,buf,5);
-			alarm(3);
-	} else
-	{
-		timeouts = 0;
+	if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+		perror("tcsetattr");
+		exit(-1);
 	}
+
+	close(fd);
+	return 0;
 }
 
-    
+
  

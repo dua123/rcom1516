@@ -95,7 +95,6 @@ int llread(int app)
 	
 }
 
-
 void init(int argc, char** argv)
 { 
     fd = open(argv[1], O_RDWR | O_NOCTTY );
@@ -451,6 +450,11 @@ int fazer_trama_resposta(char * res, char * msg)
         res[2] = DISC[2];
         res[3] = (DISC[2]^DISC[1]);
     }
+    else if (msg[2] == UA[2])
+    {
+        res[2] = UA[2];
+        res[3] = (UA[2]^UA[1]);
+    }
     res[4] = msg[4];
 
     return 0;
@@ -514,6 +518,46 @@ int llopen(int app)
 
 
     return -1;
+}
+
+int llclose(int app)
+{
+    //Construir Trama SET
+    char DISC_frame[5];
+    fazer_trama_supervisao(DISC_frame, TYPE_DISC, EMISSOR, 0);
+
+    char DISC_resp[5];
+    if (fazer_trama_resposta(DISC_resp, DISC_frame) == -1)
+        return -1;
+
+    int final = 0;
+    if(app == EMISSOR)
+    {
+        final = envia_e_espera_superv(DISC_frame, DISC_resp);
+        if (final != -1)
+        {
+            fazer_trama_supervisao(DISC_frame, TYPE_UA, EMISSOR, 0);
+            write(fd,DISC_frame,5);
+        }
+        return final;
+    }
+    else if(app == RECETOR)
+    {
+        final = espera_e_responde_superv(DISC_frame, DISC_resp);
+        if (final != -1)
+        {
+            fazer_trama_supervisao(DISC_frame, TYPE_UA, EMISSOR, 0);
+            int i; final = 0; char pak;
+            for (i = 0; i < 5; i++)
+            {   
+                read(fd,&pak,1);
+                if (pak != (char)DISC_frame[i])
+                    final = -1;
+            }
+        }
+        
+    }
+    return final;   
 }
 
 void timeout()                   // atende alarme

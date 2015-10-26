@@ -5,9 +5,8 @@
 #include "global.h"
 
 int llopen(int app);
+int llclose(int app);
 int llread(int app);
-
-
 
 void init(int argc, char** argv);
 
