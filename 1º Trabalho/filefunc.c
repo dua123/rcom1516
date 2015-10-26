@@ -2,6 +2,7 @@
 
 
 int fd;
+char BCC_2;
 char filename[48];
 struct termios oldtio,newtio;
 volatile int STOP=FALSE; // flag dos alarmes llopen
@@ -302,7 +303,7 @@ int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char 
 }
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 	
-	if(dados[0]!= FLAG)
+if(dados[0]!= FLAG)
         return -1;
     if(dados[1]!= AE)
         return -1;
@@ -514,10 +515,19 @@ int llread(int app)
             total_number_packets = (total_file_size / 256);
         printf("chunks: %d\n", total_number_packets);
 
-
+	
         //MONTAR O COMANDO INCIAL
         char pack_command[PACKETMAXSIZE]; int ALTERNATING = 0;
         int temp_size = packup_control(pack_command, PAK_CMD_FIRST, total_number_packets, filename);
+
+	int j = 0;
+	for (j= 0; j<temp_size; j++ )
+	{
+		if (j == 0)
+			BCC_2 = pack_command[j];
+		else 
+			BCC_2 = (BCC_2 ^ pack_command[j]);
+	}
 
         //ENVIAR A TRAMA DE INFORMACAO INICIAL
         envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
@@ -805,8 +815,13 @@ int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     //Tirar headers dos dados
     char dados_deframed[STUFFED_PACKET_MAXSIZE];  
-    char bcc; //E preciso verificar
+    BCC_2 = incoming_frame[i-2];
+	char bcc;
     int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
+	if (temp_size < 0 )
+		successo = -1;
+	if ( BCC_2 != bcc)
+		successo = -1;
     char dados_destuffed[PACKETMAXSIZE];
     de_stuffing(dados_deframed,dados_destuffed, temp_size);
 
@@ -846,8 +861,7 @@ int envia_e_espera_dados(char * dados, int s, int size)
     char stuffed_data[STUFFED_PACKET_MAXSIZE];
     int temp_size = size + byte_stuffing_encode(dados, stuffed_data, size);
     char framed_data[FRAME_MAXSIZE]; 
-    char bcc = (AE^CDATA(s)); //completar bcc
-    Fazer_trama(temp_size, stuffed_data, s, framed_data, &bcc);
+    Fazer_trama(temp_size, stuffed_data, s, framed_data, &BCC_2);
 
     //Formular a resposta esperada
     char res[5]; int r; if (s == 0)  r = 1; else r = 0;
