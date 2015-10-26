@@ -7,6 +7,8 @@ struct termios oldtio,newtio;
 volatile int STOP=FALSE; // flag dos alarmes llopen
 char Alarm_buffer[FRAME_MAXSIZE];
 
+
+
 void init(int argc, char** argv){ 
     fd = open(argv[1], O_RDWR | O_NOCTTY );
     if (fd <0) 
@@ -508,14 +510,21 @@ int llread(int app)
         printf("chunks: %d\n", chunk_amount);
 
 
-        //ENVIAR A TRAMA DE SUPERVISAO COM A INFORMACAO INICIAL
+        //MONTAR O COMANDO INCIAL
+        char pack_command[PACKETMAXSIZE]; int ALTERNATING = 0;
+        int temp_size = packup_control(pack_command, PAK_CMD_FIRST, chunk_amount, filename);
 
-
+        //ENVIAR A TRAMA DE INFORMACAO INICIAL
+        envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
 
         return 0;
     }   
     else if(app == RECETOR)
     {
+
+        //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
+        int ALTERNATING = 0;
+        espera_e_responde_dados(TYPE_RR, ALTERNATING);
 
         return 0;
     }
@@ -525,8 +534,6 @@ int llread(int app)
 
 int llread2(int app)
 {
-
-
     char buf[FRAME_MAXSIZE];
     
     if (app == EMISSOR)
@@ -627,7 +634,6 @@ void timeout()                   // atende alarme
 int espera_e_responde_superv(char * msg, char * res)
 {
 
-    //RECEBER SET
     unsigned char pak;
     int state = 0;
     while (STOP==FALSE) 
@@ -678,7 +684,6 @@ int espera_e_responde_superv(char * msg, char * res)
         }
     }
 
-    // Enviar UA resposta
     usleep(50);
     write(fd,res,5);    
     STOP = FALSE;
@@ -690,8 +695,9 @@ int envia_e_espera_superv(char * msg, char * res)
 	//Preparar a função de timeout
 	memcpy(&Alarm_buffer[0], &msg[0], 5);
 	(void) signal(SIGALRM, timeout);
-
 	alarm(2);
+
+    //enviar
 	write(fd,Alarm_buffer,5);
 	
 	//Ciclo de Espera
@@ -754,8 +760,98 @@ int envia_e_espera_superv(char * msg, char * res)
 	return -1;
 }
 
-int envia_e_espera_dados(char * msg, char * res)
+int espera_e_responde_dados(int type, int s){
+
+    unsigned char pak;
+    char incoming_frame[FRAME_MAXSIZE];
+    int i = 0;
+    int state = 0;
+
+    while (STOP==FALSE) 
+    {
+        usleep(50);
+        read(fd,&pak,1);
+        switch (state)
+        {
+        case 0: //Espera FLAG - F
+                if (pak == FLAG)
+                {   
+                    incoming_frame[i] = pak;
+                    i++;
+                    state++;
+                }
+                break;
+        case 1: //Espera Edreço - A
+                if (pak == AE)
+                {
+                    incoming_frame[i] = pak;
+                    i++;
+                    state++;
+                }       
+                else if (pak == FLAG)
+                    i = 1;
+                else
+                    state = 0;
+                break;
+        case 2: // Espera Controlo - C
+                if (pak == CDATA(s))
+                {
+                    incoming_frame[i] = pak;
+                    i++;
+                    state++;
+                }
+                else if (pak == FLAG)
+                        state = 1;
+                else
+                        state = 0;
+                break;
+        case 3: // Espera de BCC
+                if (pak == (AE ^ CDATA(s)) )
+                {
+                    incoming_frame[i] = pak;
+                    i++;
+                    state++;
+                }
+                else if (pak == FLAG)
+                    state = 1;
+                else
+                    state = 0;
+                break;
+        case 4: // Espera Flag - F
+                if (pak == FLAG)
+                {
+                    incoming_frame[i] = pak;
+                    i++;
+                    STOP = TRUE;
+                }
+                else
+                {
+                    incoming_frame[i] = pak;
+                    i++;
+                }
+                break;
+        }
+    }
+
+    //Tirar eaders dos dados
+    printf("PROGRESSO!\n");
+
+    return 0;
+}
+
+int envia_e_espera_dados(char * dados, int s, int size)
 {
-	
+    //preparar os dados
+    char stuffed_data[STUFFED_PACKET_MAXSIZE];
+    int temp_size = size + byte_stuffing_encode(dados, stuffed_data, size);
+    char framed_data[FRAME_MAXSIZE]; 
+    char bcc = (AE^CDATA(0)); //completar bcc
+    Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
+
+    //enviar
+    write(fd,framed_data,5);
+
+    printf("PROGRESSO!\n");
+
     return 0;
 }

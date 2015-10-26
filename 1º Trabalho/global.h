@@ -51,6 +51,9 @@
 #define TYPE_RR 	4
 #define TYPE_REJ 	5
 
+#define PAK_CMD_FIRST	1
+#define PAK_CMD_DATA	0
+#define PAK_CMD_LAST	2
 
 static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
 static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
