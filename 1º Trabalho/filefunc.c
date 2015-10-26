@@ -132,17 +132,16 @@ long file_to_buffer(char * buffer, char * name)
 
     if (fp != NULL)
     {
-            //obtain file size
-            fseek(fp, 0, SEEK_END);
-            file_size = ftell(fp);
-            fseek(fp, 0, SEEK_SET);
+        //obtain file size
+        fseek(fp, 0, SEEK_END);
+        file_size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
 
-            //Read the file
-            if (fread(buffer, sizeof(char), file_size, fp) == 0 )
-                    printf("file_to_buffer(): Erro a ler ficheiro \n");
+        //Read the file
+        if (fread(buffer, sizeof(char), file_size, fp) == 0 )
+                printf("file_to_buffer(): Erro a ler ficheiro \n");
 
-
-            fclose(fp);
+        fclose(fp);
 
 
     }
@@ -151,9 +150,6 @@ long file_to_buffer(char * buffer, char * name)
             printf("file_to_buffer(): Erro a abrir ficheiro \n");
             return -1;
     }
-
-    printf("file_to_buffer(): Terminou com sucesso \n");
-    printf("file_to_buffer(): Tamanho do ficheiro: %lu \n", file_size);
     return file_size;
 }
 int buffer_to_file(char * buffer, char * name, long file_size)
@@ -167,16 +163,27 @@ int buffer_to_file(char * buffer, char * name, long file_size)
     return 0;
 }
  
-int get_chunk(char * res, char * buffer, int chunk_size, int offset, long file_size)
-{
+int get_chunk(char * res, char * file_name, int chunk_size, int offset, long file_size)
+{   
+    FILE * fp = fopen(file_name, "r");
+    fseek(fp, offset, SEEK_SET);
+    size_t amount = chunk_size;
+    if (fread(res, sizeof(char), amount, fp) == 0 )
+        printf("file_to_buffer(): Erro a ler ficheiro \n");
+
+    fclose(fp);
+    return amount;
+
+/*
     int i = 0;
     for (; i < chunk_size && offset+i < file_size; i++)
     {
             res[i] = buffer[offset+i];
 
     }
-
     return i;
+*/
+
 }
 
 int packup_data(char * res, int n_seq, char * data, int data_size)
@@ -507,12 +514,13 @@ int llread(int app)
     {
 
         //VER A QUANTIDADE DE TRAMAS DE DADOS A ENVIAR
-        int total_number_packets = file_byte_size(filename);
-        printf("bytes: %d, ", total_number_packets);
-        if ((total_number_packets % 256) > 0)
-            total_number_packets = (total_number_packets / 256) + 1;
+        int total_file_size = file_byte_size(filename);
+        int total_number_packets;
+        printf("bytes: %d, ", total_file_size);
+        if ((total_file_size % 256) > 0)
+            total_number_packets = (total_file_size / 256) + 1;
         else
-            total_number_packets = (total_number_packets / 256);
+            total_number_packets = (total_file_size / 256);
         printf("chunks: %d\n", total_number_packets);
 
 
@@ -524,8 +532,17 @@ int llread(int app)
         envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
         ALTERNATING = 1;
 
-        //DADOS VEM PRAQUI DEPOIS
-        
+        //DADOS
+        int progresso_do_envio;
+        for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
+        {
+            //Encontrar o proximo chunk
+            char next_chunk[DATAMAXSIZE];
+            get_chunk(next_chunk, filename, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE, total_file_size);
+
+            buffer_to_file(next_chunk, "image2.jpg", DATAMAXSIZE);
+        }
+
 
 
         //MONTAR O COMANDO FINAL
