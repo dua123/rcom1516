@@ -491,18 +491,29 @@ int test_file_chunking(char * source_filename, char * dest_filename){
 
 int llopen(int app)
 {
+
+    //Construir Trama SET
+    char SET_frame[5];
+    fazer_trama_supervisao(SET_frame, TYPE_SET, EMISSOR, 0);
+
+    char SET_resp[5];
+    if (fazer_trama_resposta(SET_resp, SET_frame) == -1)
+        return -1;
+
+
 	if (app == EMISSOR)
 	{
-		//Construir Trama SET
-        char SET_frame[5];
-		fazer_trama_supervisao(SET_frame, TYPE_SET, EMISSOR, 0);
-
-		char SET_resp[5];
-        if (fazer_trama_resposta(SET_resp, SET_frame) == -1)
-            return -1;
         int final = envia_e_espera_superv(SET_frame, SET_resp);
 		return final;
+    } 
+    else if(app == RECETOR)
+    {
+        int final = espera_e_responde_superv(SET_frame, SET_resp);
+        return final;
     }
+
+
+    return -1;
 }
 
 void timeout()                   // atende alarme
@@ -518,6 +529,63 @@ void timeout()                   // atende alarme
 
 int espera_e_responde_superv(char * msg, char * res)
 {
+
+    //RECEBER SET
+    unsigned char pak;
+    int state = 0;
+    while (STOP==FALSE) 
+    {
+        usleep(50);
+        read(fd,&pak,1);
+
+        switch (state)
+        {
+        case 0: //Espera FLAG - F
+                if (pak == msg[0])
+                {
+                        state++;
+                }
+                break;
+        case 1: //Espera Edreço - A
+                if (pak == msg[1])
+                        state++;
+                else if (pak == msg[0])
+                        ;
+                else
+                        state = 0;
+                break;
+        case 2: // Espera Controlo - C
+                if (pak == msg[2])
+                        state++;
+                else if (pak == msg[0])
+                        state = 1;
+                else
+                        state = 0;
+                break;
+        case 3: // Espera de BCC
+                if (pak == msg[3] )
+                        state++;
+                else if (pak == msg[0])
+                        state = 1;
+                else
+                        state = 0;
+                break;
+        case 4: // Espera Flag - F
+                if (pak == msg[4])
+                {
+                        STOP = TRUE;
+                }
+                else
+                        state = 0;
+                break;
+        }
+    }
+
+    // Enviar UA resposta
+    usleep(50);
+    write(fd,res,5);    
+    STOP = FALSE;
+    return 0;
 	
 }
 int envia_e_espera_superv(char * msg, char * res)
@@ -535,8 +603,7 @@ int envia_e_espera_superv(char * msg, char * res)
 	
     int state = 0;
 	while(STOP==FALSE)
-	{	
-        printf("state: %d\n", state);		
+	{		
 		usleep(50);
 		read(fd,&pak,1);
         switch (state)
@@ -574,7 +641,6 @@ int envia_e_espera_superv(char * msg, char * res)
 		case 4: // Espera Flag - F
 			if (pak == (char)res[4])
 			{
-				printf("llopen(): Recebi UA \n");
 				state = 0;
 				STOP = TRUE;
 				sleep(2);

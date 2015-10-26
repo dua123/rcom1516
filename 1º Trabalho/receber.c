@@ -4,7 +4,6 @@
  
 int c, res, timeouts = 0;
 char buf[FRAME_MAXSIZE];
-int llopen2();
 void atende();
      
      
@@ -27,8 +26,10 @@ int main(int argc, char** argv)
     init(argc, argv);
      
 
-    if(llopen2() == 1)
+    if(llopen( RECETOR ) == 1)
         printf("llopen(): Falhou\n");
+    else
+    	printf("llopen(): SUCESSO\n");
 
 /*	
 	if (llread(RECETOR) == 1)
@@ -52,77 +53,7 @@ int main(int argc, char** argv)
         close(fd);
         return 0;
 }
-     
-int llopen2(){
-     
-	//RECEBER SET
-	unsigned char * receive = SET;
-	unsigned char pak;
-	int state = 0;
-	while (STOP==FALSE) {
-			usleep(50);
-			read(fd,&pak,1);
 
-			switch (state)
-			{
-			case 0: //Espera FLAG - F
-					if (pak == SET[0])
-					{
-							state++;
-					}
-					break;
-			case 1: //Espera Edreço - A
-					if (pak == SET[1])
-							state++;
-					else if (pak == SET[0])
-							;
-					else
-							state = 0;
-					break;
-			case 2: // Espera Controlo - C
-					if (pak == SET[2])
-							state++;
-					else if (pak == SET[0])
-							state = 1;
-					else
-							state = 0;
-					break;
-			case 3: // Espera de BCC
-					if (pak == (char)(SET[2]^SET[1]) )
-							state++;
-					else if (pak == SET[0])
-							state = 1;
-					else
-							state = 0;
-					break;
-			case 4: // Espera Flag - F
-					if (pak == SET[4])
-					{
-							printf("llopen(): Recebi o SET inteiro\n");
-							state = 0;
-							STOP = TRUE;
-					}
-					else
-							state = 0;
-					break;
-			}
-	}
-
-	// Enviar UA resposta
-	usleep(50);
-	buf[0]=UA[0];
-	buf[1]=UA[1];
-	buf[2]=UA[2];
-	buf[3]=(UA[2]^UA[1]);
-	buf[4]=UA[4];
-	printf("llopen(): A enviar UA\n");
-	res = write(fd,buf,5);
-	printf("llopen(): %d bytes written\n", res);
-
-   
-	STOP = FALSE;
-	return 0;
-}
      
 int llclose()
 {
