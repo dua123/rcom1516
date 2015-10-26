@@ -845,29 +845,40 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     usleep(50);
     STOP = FALSE;
 
+    int successo = 0;
+
+    //Tirar headers dos dados
+    char dados_deframed[STUFFED_PACKET_MAXSIZE];  
+    char bcc; //E preciso verificar
+    int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
+    char dados_destuffed[PACKETMAXSIZE];
+    de_stuffing(dados_deframed,dados_destuffed, temp_size);
+
+
     if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
     {
-        //Tirar headers dos dados
-
-        char dados_deframed[STUFFED_PACKET_MAXSIZE];  
-        char bcc; //E preciso verificar
-        int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
-        char dados_destuffed[PACKETMAXSIZE];
-        de_stuffing(dados_deframed,dados_destuffed, temp_size);
-
         int total_number_packets = unpack_control(dados_destuffed, type, filename);
         printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
-
-        //Formular resposta
-
-        //Enviar
-
-        printf("PROGRESSO!\n");
     }   
     else
     {
 
     }
+
+    //Formular resposta
+    char trama_resposta[5];
+    int r;
+    if (successo != 0)
+    {
+        if (s == 0)  r = 1; else r = 0;
+        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, r);
+    } else
+    {
+        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, s);
+    }
+
+    //Enviar
+    write(fd,trama_resposta,5);
 
     return 0;
 }
@@ -881,8 +892,16 @@ int envia_e_espera_dados(char * dados, int s, int size)
     char bcc = (AE^CDATA(0)); //completar bcc
     Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
 
+    //Preparar timeout
+    memcpy(&Alarm_buffer[0], &framed_data[0], temp_size+6);
+    //(void) signal(SIGALRM, timeout);
+    //alarm(2);
+
     //enviar
-    write(fd,framed_data,temp_size+6);
+    write(fd,Alarm_buffer,temp_size+6);
+
+    //Ficar a espera da resposta
+    //unsigned char pak;
 
 
     printf("PROGRESSO!\n");
