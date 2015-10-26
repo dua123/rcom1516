@@ -52,7 +52,6 @@
 #define TYPE_REJ 	5
 
 
-
 static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
 static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
@@ -63,8 +62,6 @@ extern char  filename[48];
 
 extern volatile int STOP;
 extern char Alarm_buffer[FRAME_MAXSIZE];
-
-extern char buf[FRAME_MAXSIZE];
 
 
 

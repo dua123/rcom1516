@@ -1,8 +1,6 @@
 /*Non-Canonical Input Processing*/
      
 #include "filefunc.h"
-int c, res;
-char buf[FRAME_MAXSIZE];
  
 void atende();
 
@@ -34,20 +32,11 @@ int main(int argc, char** argv)
 	else		
 		printf("llcose(): SUCESSO \n"); 
 /*
-
-
 	if (llread(EMISSOR) == 1)
 		printf("llread(): Falhou \n");
 	else		
 		printf("llread(): SUCESSO \n"); 
 */
 
-	if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) 
-	{
-	  perror("tcsetattr");
-	  exit(-1);
-	}
-
-	close(fd);
 	return 0;
 }

@@ -9,6 +9,7 @@ int llclose(int app);
 int llread(int app);
 
 void init(int argc, char** argv);
+void finalize();
 
 long file_to_buffer(char * buffer, char * name);
 int buffer_to_file(char * buffer, char * name, long file_size);

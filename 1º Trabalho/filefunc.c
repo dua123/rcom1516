@@ -7,96 +7,7 @@ struct termios oldtio,newtio;
 volatile int STOP=FALSE; // flag dos alarmes llopen
 char Alarm_buffer[FRAME_MAXSIZE];
 
-
-int llread(int app)
-{
-	if (app == EMISSOR)
-	{
-		sleep(1);
-		int num;
-		printf("llread(): A enviar : \n");
-
-		if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
-			return 1;
-		num =write(fd,buf,5);
-		printf(" numero de bytes %d \n",num);
-		printf("%2x, %2x, %2x, %2x, %2x\n",buf[0],buf[1],buf[2],buf[3],buf[4]);
-
-		return 0;
-		
-	} else if (app == RECETOR)
-	{
-	printf("llread(): A enviar : \n");
-	STOP=FALSE;
-
-	unsigned char * receive = SET;
-	unsigned char pak;
-	int state = 0;
-		while (STOP==FALSE) 
-		{
-			usleep(50);
-			read(fd,&pak,1);
-			printf("%2x : \n",pak);
-			switch (state)
-			{
-				case 0: //Espera FLAG - F
-					if (pak == FLAG)
-					{	
-						buf[0]=FLAG;
-					   state++;
-					}
-				break;
-				case 1: //Espera AE ou AR
-					if (pak == AE)
-					{
-					   buf[1]=AE;
-					   state++;
-					}else if(pak==AR){
-					   buf[1]=AR;
-					   state++;
-					}
-				break;
-				case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
-					if (pak == CSET)
-					{
-					   buf[2]=CSET;
-					   state++;
-					}else if(pak==CDISC){
-					   buf[2]=CDISC;
-					   state++;
-					}//continuar mais tarde só para motivos de testes
-				break;
-				case 3: //Espera xor entre buf[1])^buf[2]
-					if (pak == (char)(buf[1])^buf[2])
-					{
-					   buf[3]=(char)(buf[1])^buf[2];
-					   state++;
-					}
-				break;
-				case 4: //Espera AE ou AR
-					if (pak == FLAG)
-					{
-					   buf[4]=FLAG;
-					   state++;
-					}
-				break;
-				case 5: //Espera AE ou AR
-					STOP=TRUE;
-				break;
-			}
-		}
-	printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
-	return 0;	
-	}
-	else
-		return -1;
-
-	
-	
-}
-
-void init(int argc, char** argv)
-{ 
+void init(int argc, char** argv){ 
     fd = open(argv[1], O_RDWR | O_NOCTTY );
     if (fd <0) 
     {
@@ -133,9 +44,15 @@ void init(int argc, char** argv)
     }
 
     printf("New termios structure set\n");
-
 }
-
+void finalize(){
+    sleep(2);
+    if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+        perror("tcsetattr");
+        exit(-1);
+    }
+    close(fd);
+}
 
 
 int byte_stuffing_encode(char * trama, char * res, int size)
@@ -347,8 +264,6 @@ int unpack_control(char * pak, int command, char * file_name)
 
 int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
 
-
-
 	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
 		return -1;	
 
@@ -357,7 +272,6 @@ int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char 
 	res[2] = CDATA(controlo);
 	res[3] = (AE ^ CDATA(controlo));
 
-    int i =0; char bcc;
     memcpy(&res[4], &dados[0], tamanho_dados);
     memcpy(&res[4+tamanho_dados],&bcc2, 1);
 	res[5+tamanho_dados] =  FLAG;
@@ -490,6 +404,8 @@ int test_file_chunking(char * source_filename, char * dest_filename){
 
     if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
                 printf("SUCESSO");
+
+    return 0;
 }
 
 
@@ -557,8 +473,100 @@ int llclose(int app)
         }
         
     }
+    finalize();
+
     return final;   
 }
+
+int llread(int app)
+{
+
+
+    char buf[FRAME_MAXSIZE];
+    
+    if (app == EMISSOR)
+    {
+        sleep(1);
+        int num;
+        printf("llread(): A enviar : \n");
+
+        if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
+            return 1;
+        num =write(fd,buf,5);
+        printf(" numero de bytes %d \n",num);
+        printf("%2x, %2x, %2x, %2x, %2x\n",buf[0],buf[1],buf[2],buf[3],buf[4]);
+
+        return 0;
+        
+    } else if (app == RECETOR)
+    {
+    printf("llread(): A enviar : \n");
+    STOP=FALSE;
+    
+    unsigned char pak;
+    int state = 0;
+        while (STOP==FALSE) 
+        {
+            usleep(50);
+            read(fd,&pak,1);
+            printf("%2x : \n",pak);
+            switch (state)
+            {
+                case 0: //Espera FLAG - F
+                    if (pak == FLAG)
+                    {   
+                        buf[0]=FLAG;
+                       state++;
+                    }
+                break;
+                case 1: //Espera AE ou AR
+                    if (pak == AE)
+                    {
+                       buf[1]=AE;
+                       state++;
+                    }else if(pak==AR){
+                       buf[1]=AR;
+                       state++;
+                    }
+                break;
+                case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
+                    if (pak == CSET)
+                    {
+                       buf[2]=CSET;
+                       state++;
+                    }else if(pak==CDISC){
+                       buf[2]=CDISC;
+                       state++;
+                    }//continuar mais tarde só para motivos de testes
+                break;
+                case 3: //Espera xor entre buf[1])^buf[2]
+                    if (pak == (char)(buf[1]^buf[2]) )
+                    {
+                       buf[3]=(char)(buf[1])^buf[2];
+                       state++;
+                    }
+                break;
+                case 4: //Espera AE ou AR
+                    if (pak == FLAG)
+                    {
+                       buf[4]=FLAG;
+                       state++;
+                    }
+                break;
+                case 5: //Espera AE ou AR
+                    STOP=TRUE;
+                break;
+            }
+        }
+    printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
+    return 0;   
+    }
+    else
+        return -1;
+
+}
+
+
 
 void timeout()                   // atende alarme
 {
@@ -704,4 +712,5 @@ int envia_e_espera_superv(char * msg, char * res)
 int envia_e_espera_dados(char * msg, char * res)
 {
 	
+    return 0;
 }

@@ -1,9 +1,6 @@
 /*Non-Canonical Input Processing*/
  
 #include "filefunc.h"
- 
-int c, res, timeouts = 0;
-char buf[FRAME_MAXSIZE];
      
      
 int main(int argc, char** argv)
@@ -44,16 +41,6 @@ int main(int argc, char** argv)
 
 */	
 
-
-
-    sleep(2);
-
-	if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
-		perror("tcsetattr");
-		exit(-1);
-	}
-
-	close(fd);
 	return 0;
 }
 
