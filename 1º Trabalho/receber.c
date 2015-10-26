@@ -113,7 +113,7 @@ int llopen2(){
 	buf[0]=UA[0];
 	buf[1]=UA[1];
 	buf[2]=UA[2];
-	buf[3]=(UA[3]^UA[1]);
+	buf[3]=(UA[2]^UA[1]);
 	buf[4]=UA[4];
 	printf("llopen(): A enviar UA\n");
 	res = write(fd,buf,5);
