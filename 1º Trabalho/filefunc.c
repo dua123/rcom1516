@@ -6,6 +6,7 @@ char filename[48];
 struct termios oldtio,newtio;
 volatile int STOP=FALSE; // flag dos alarmes llopen
 char Alarm_buffer[FRAME_MAXSIZE];
+int total_number_packets;
 
 
 
@@ -147,8 +148,8 @@ long file_to_buffer(char * buffer, char * name)
     }
     else
     {
-            printf("file_to_buffer(): Erro a abrir ficheiro \n");
-            return -1;
+        printf("file_to_buffer(): Erro a abrir ficheiro \n");
+        return -1;
     }
     return file_size;
 }
@@ -173,16 +174,6 @@ int get_chunk(char * res, char * file_name, int chunk_size, int offset, long fil
 
     fclose(fp);
     return amount;
-
-/*
-    int i = 0;
-    for (; i < chunk_size && offset+i < file_size; i++)
-    {
-            res[i] = buffer[offset+i];
-
-    }
-    return i;
-*/
 
 }
 
@@ -539,8 +530,11 @@ int llread(int app)
             //Encontrar o proximo chunk
             char next_chunk[DATAMAXSIZE];
             get_chunk(next_chunk, filename, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE, total_file_size);
-
-            buffer_to_file(next_chunk, "image2.jpg", DATAMAXSIZE);
+            char data_packet[PACKETMAXSIZE];
+            temp_size = packup_data(data_packet, progresso_do_envio, next_chunk, DATAMAXSIZE);
+            
+            envia_e_espera_dados(data_packet, ALTERNATING, temp_size);
+            if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
         }
 
 
@@ -557,15 +551,29 @@ int llread(int app)
         //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
         int ALTERNATING = 0;
         int success = -1;
+        char received_data[DATAMAXSIZE];
         while (success != 0)
-            success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0);
+            success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
         ALTERNATING = 1;
+
+        //dados
+        int progresso_do_envio;
+        for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
+        {
+            printf("|");
+            success = -1;
+            while (success != 0)
+                success = espera_e_responde_dados(PAK_CMD_DATA, ALTERNATING, progresso_do_envio, received_data);
+            if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
+
+            buffer_to_file(received_data, filename, DATAMAXSIZE);
+        }
 
 
         //ESPERA PELO COMANDO final
         success = -1;
         while (success != 0)
-            success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0);
+            success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0, received_data);
         if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
 
 
@@ -581,7 +589,7 @@ void timeout()                   // atende alarme
 	{
 		printf("Ocorreu time out\n");
 		write(fd,Alarm_buffer,5);
-		alarm(2);
+		alarm(1);
 	}
 }
 
@@ -701,7 +709,7 @@ int envia_e_espera_superv(char * msg, char * res)
 			{
 				state = 0;
 				STOP = TRUE;
-				sleep(2);
+				usleep(50);
 				STOP = FALSE;
 				return 0;  
 					
@@ -715,7 +723,7 @@ int envia_e_espera_superv(char * msg, char * res)
 	return -1;
 }
 
-int espera_e_responde_dados(int type, int s, int n_seq){
+int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     unsigned char pak;
     char incoming_frame[FRAME_MAXSIZE];
@@ -725,7 +733,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     while (STOP==FALSE) 
     {
         //printf("state: %d\n", state);
-        usleep(50);
+        usleep(5);
         read(fd,&pak,1);
         switch (state)
         {
@@ -790,7 +798,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     }
 
 
-    usleep(50);
+    usleep(5);
     STOP = FALSE;
 
     int successo = 0;
@@ -805,12 +813,13 @@ int espera_e_responde_dados(int type, int s, int n_seq){
 
     if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
     {
-        int total_number_packets = unpack_control(dados_destuffed, type, filename);
+        total_number_packets = unpack_control(dados_destuffed, type, filename);
         //printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
     }   
     else
     {
-
+        if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
+           successo = -1; 
     }
 
     //Formular resposta
@@ -898,7 +907,7 @@ int envia_e_espera_dados(char * dados, int s, int size)
             {
                 state = 0;
                 STOP = TRUE;
-                sleep(2);
+                usleep(50);
                 STOP = FALSE;
                 return 0;  
                     

@@ -34,7 +34,7 @@ int fazer_trama_resposta(char * res, char * msg);
 
 int espera_e_responde_superv(char * msg, char * res);
 int envia_e_espera_superv(char * msg, char * res);
-int espera_e_responde_dados(int type, int s, int n_seq);
+int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos);
 int envia_e_espera_dados(char * dados, int size, int s);
 
 void timeout();
