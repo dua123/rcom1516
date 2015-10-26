@@ -232,10 +232,11 @@ int packup_control(char * res, int command, unsigned int pack_amount, char * fil
 
     memcpy(&res[7], file_name, strlen(file_name));
 
-    res[7 +  strlen(file_name) ] = 0;
-    res[8 +  strlen(file_name) ] = 0;
+    res[7 +  strlen(file_name) ] = 0x00;
+    res[8 +  strlen(file_name) ] = 0x00;
 
-    return (7 + sizeof(file_name));
+
+    return (7 + strlen(file_name));
 }
 
 int unpack_data(char * res, uint8_t n_seq, char * data)
@@ -271,10 +272,8 @@ int unpack_control(char * pak, int command, char * file_name)
     int pack_amount = 256 * (uint8_t) pak[3] + (uint8_t) pak[4];
 
     int str_length = (uint8_t) pak[6];
-    printf("%c\n", pak[7+8]);
-    printf("%c\n", pak[7+9]);
 
-    strcpy(file_name, &pak[7]);
+    memcpy(file_name, &pak[7], str_length);
 
 
     if (strlen(file_name) != str_length)
@@ -842,7 +841,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
         }
     }
 
-    printf("PROGRESSO!\n");
+
     usleep(50);
     STOP = FALSE;
 
@@ -863,6 +862,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
 
         //Enviar
 
+        printf("PROGRESSO!\n");
     }   
     else
     {
@@ -882,7 +882,8 @@ int envia_e_espera_dados(char * dados, int s, int size)
     Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
 
     //enviar
-    write(fd,framed_data,temp_size+8);
+    write(fd,framed_data,temp_size+6);
+
 
     printf("PROGRESSO!\n");
 
