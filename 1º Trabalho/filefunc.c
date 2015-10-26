@@ -2,8 +2,8 @@
 
 
 int fd;
+char filename[48];
 struct termios oldtio,newtio;
-
 volatile int STOP=FALSE; // flag dos alarmes llopen
 char Alarm_buffer[FRAME_MAXSIZE];
 
@@ -107,7 +107,22 @@ int de_stuffing(char * trama,char * res, int size)
    
     return count;
 }
- 
+
+long file_byte_size(char * name)
+{
+    FILE * fp = fopen(name, "r");
+    long file_size;
+
+    if (fp != NULL)
+    {
+        //obtain file size
+        fseek(fp, 0, SEEK_END);
+        file_size = ftell(fp);
+    }
+    fclose(fp);
+
+    return file_size;
+}
 long file_to_buffer(char * buffer, char * name)
 {
     FILE * fp = fopen(name, "r");
@@ -480,6 +495,36 @@ int llclose(int app)
 
 int llread(int app)
 {
+    if(app == EMISSOR)
+    {
+
+        //VER A QUANTIDADE DE TRAMAS DE DADOS A ENVIAR
+        int chunk_amount = file_byte_size(filename);
+        printf("bytes: %d, ", chunk_amount);
+        if ((chunk_amount % 256) > 0)
+            chunk_amount = (chunk_amount / 256) + 1;
+        else
+            chunk_amount = (chunk_amount / 256);
+        printf("chunks: %d\n", chunk_amount);
+
+
+        //ENVIAR A TRAMA DE SUPERVISAO COM A INFORMACAO INICIAL
+
+
+
+        return 0;
+    }   
+    else if(app == RECETOR)
+    {
+
+        return 0;
+    }
+    else
+       return -1;
+}
+
+int llread2(int app)
+{
 
 
     char buf[FRAME_MAXSIZE];
@@ -502,7 +547,7 @@ int llread(int app)
     {
     printf("llread(): A enviar : \n");
     STOP=FALSE;
-    
+
     unsigned char pak;
     int state = 0;
         while (STOP==FALSE) 

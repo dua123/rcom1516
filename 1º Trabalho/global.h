@@ -57,7 +57,9 @@ static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
 extern int fd;
+extern int user;
 extern struct termios oldtio,newtio;
+extern FILE * image_fd;
 extern char  filename[48];
 
 extern volatile int STOP;

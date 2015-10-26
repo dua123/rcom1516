@@ -8,9 +8,12 @@ int llopen(int app);
 int llclose(int app);
 int llread(int app);
 
+int llread2(int app);
+
 void init(int argc, char** argv);
 void finalize();
 
+long file_byte_size(char * name);
 long file_to_buffer(char * buffer, char * name);
 int buffer_to_file(char * buffer, char * name, long file_size);
 
