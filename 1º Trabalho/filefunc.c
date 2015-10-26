@@ -531,102 +531,19 @@ int llread(int app)
 
         //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
         int ALTERNATING = 0;
-        espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0);
+        
+        int success = -1;
+        while (success != 0)
+            success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0);
+
         ALTERNATING = 1;
+
 
         return 0;
     }
     else
        return -1;
 }
-
-int llread2(int app)
-{
-    char buf[FRAME_MAXSIZE];
-    
-    if (app == EMISSOR)
-    {
-        sleep(1);
-        int num;
-        printf("llread(): A enviar : \n");
-
-        if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
-            return 1;
-        num =write(fd,buf,5);
-        printf(" numero de bytes %d \n",num);
-        printf("%2x, %2x, %2x, %2x, %2x\n",buf[0],buf[1],buf[2],buf[3],buf[4]);
-
-        return 0;
-        
-    } else if (app == RECETOR)
-    {
-    printf("llread(): A enviar : \n");
-    STOP=FALSE;
-
-    unsigned char pak;
-    int state = 0;
-        while (STOP==FALSE) 
-        {
-            usleep(50);
-            read(fd,&pak,1);
-            printf("%2x : \n",pak);
-            switch (state)
-            {
-                case 0: //Espera FLAG - F
-                    if (pak == FLAG)
-                    {   
-                        buf[0]=FLAG;
-                       state++;
-                    }
-                break;
-                case 1: //Espera AE ou AR
-                    if (pak == AE)
-                    {
-                       buf[1]=AE;
-                       state++;
-                    }else if(pak==AR){
-                       buf[1]=AR;
-                       state++;
-                    }
-                break;
-                case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
-                    if (pak == CSET)
-                    {
-                       buf[2]=CSET;
-                       state++;
-                    }else if(pak==CDISC){
-                       buf[2]=CDISC;
-                       state++;
-                    }//continuar mais tarde só para motivos de testes
-                break;
-                case 3: //Espera xor entre buf[1])^buf[2]
-                    if (pak == (char)(buf[1]^buf[2]) )
-                    {
-                       buf[3]=(char)(buf[1])^buf[2];
-                       state++;
-                    }
-                break;
-                case 4: //Espera AE ou AR
-                    if (pak == FLAG)
-                    {
-                       buf[4]=FLAG;
-                       state++;
-                    }
-                break;
-                case 5: //Espera AE ou AR
-                    STOP=TRUE;
-                break;
-            }
-        }
-    printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
-    return 0;   
-    }
-    else
-        return -1;
-
-}
-
-
 
 void timeout()                   // atende alarme
 {
@@ -868,7 +785,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     //Formular resposta
     char trama_resposta[5];
     int r;
-    if (successo != 0)
+    if (successo == 0)
     {
         if (s == 0)  r = 1; else r = 0;
         fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, r);
@@ -880,7 +797,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     //Enviar
     write(fd,trama_resposta,5);
 
-    return 0;
+    return successo;
 }
 
 int envia_e_espera_dados(char * dados, int s, int size)
@@ -892,19 +809,77 @@ int envia_e_espera_dados(char * dados, int s, int size)
     char bcc = (AE^CDATA(0)); //completar bcc
     Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
 
+    //Formular a resposta esperada
+    char res[5]; int r; if (s == 0)  r = 1; else r = 0;
+    fazer_trama_supervisao(res, TYPE_RR, EMISSOR, r);
+
     //Preparar timeout
     memcpy(&Alarm_buffer[0], &framed_data[0], temp_size+6);
-    //(void) signal(SIGALRM, timeout);
-    //alarm(2);
+    (void) signal(SIGALRM, timeout);
+    alarm(2);
 
     //enviar
     write(fd,Alarm_buffer,temp_size+6);
 
     //Ficar a espera da resposta
-    //unsigned char pak;
+    unsigned char pak;
 
+    int state = 0;
+    while(STOP==FALSE)
+    {       
+        //printf("state: %d\n", state);
+        usleep(50);
+        read(fd,&pak,1);
+        switch (state)
+        {
+        case 0: //Espera FLAG - F
+            if (pak == (char)res[0])
+            {
+                state++;
+            }
+            break;
+        case 1: //Espera Edreço - A
+            if (pak == (char)res[1])
+                state++;
+            else if (pak == (char)res[0])
+                ;
+            else
+                state = 0;
+            break;
+        case 2: // Espera Controlo - C
+            if (pak == (char)res[2])
+                state++;
+            else if (pak == (char)res[0])
+                state = 1;
+            else
+                state = 0;
+            break;
+        case 3: // Espera de BCC
+            if (pak == (char)res[3])
+                state++;
+            else if (pak == (char)res[0])
+                state = 1;
+            else
+                state = 0;
+            break;
+        case 4: // Espera Flag - F
+            if (pak == (char)res[4])
+            {
+                state = 0;
+                STOP = TRUE;
+                sleep(2);
+                STOP = FALSE;
 
-    printf("PROGRESSO!\n");
+                printf("PROGRESSO!\n");
+                return 0;  
+                    
+            }
+            else
+                state = 0;
+            break;
+        }
+    }   
+    
+    return -1;
 
-    return 0;
 }

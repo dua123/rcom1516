@@ -8,8 +8,6 @@ int llopen(int app);
 int llclose(int app);
 int llread(int app);
 
-int llread2(int app);
-
 void init(int argc, char** argv);
 void finalize();
 
