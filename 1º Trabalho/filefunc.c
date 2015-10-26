@@ -524,6 +524,14 @@ int llread(int app)
         envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
         ALTERNATING = 1;
 
+        //DADOS VEM PRAQUI DEPOIS
+        
+
+
+        //MONTAR O COMANDO FINAL
+        temp_size = packup_control(pack_command, PAK_CMD_LAST, total_number_packets, filename);
+        envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
+        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
         return 0;
     }   
     else if(app == RECETOR)
@@ -531,12 +539,17 @@ int llread(int app)
 
         //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
         int ALTERNATING = 0;
-        
         int success = -1;
         while (success != 0)
             success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0);
-
         ALTERNATING = 1;
+
+
+        //ESPERA PELO COMANDO final
+        success = -1;
+        while (success != 0)
+            success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0);
+        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
 
 
         return 0;
@@ -694,6 +707,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
 
     while (STOP==FALSE) 
     {
+        //printf("state: %d\n", state);
         usleep(50);
         read(fd,&pak,1);
         switch (state)
@@ -775,7 +789,7 @@ int espera_e_responde_dados(int type, int s, int n_seq){
     if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
     {
         int total_number_packets = unpack_control(dados_destuffed, type, filename);
-        printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
+        //printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
     }   
     else
     {
@@ -806,8 +820,8 @@ int envia_e_espera_dados(char * dados, int s, int size)
     char stuffed_data[STUFFED_PACKET_MAXSIZE];
     int temp_size = size + byte_stuffing_encode(dados, stuffed_data, size);
     char framed_data[FRAME_MAXSIZE]; 
-    char bcc = (AE^CDATA(0)); //completar bcc
-    Fazer_trama(temp_size, stuffed_data, 0, framed_data, &bcc);
+    char bcc = (AE^CDATA(s)); //completar bcc
+    Fazer_trama(temp_size, stuffed_data, s, framed_data, &bcc);
 
     //Formular a resposta esperada
     char res[5]; int r; if (s == 0)  r = 1; else r = 0;
@@ -869,8 +883,6 @@ int envia_e_espera_dados(char * dados, int s, int size)
                 STOP = TRUE;
                 sleep(2);
                 STOP = FALSE;
-
-                printf("PROGRESSO!\n");
                 return 0;  
                     
             }
