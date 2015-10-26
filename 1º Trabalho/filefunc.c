@@ -332,7 +332,7 @@ if(dados[0]!= FLAG)
     if(dados[4+i]!= FLAG)
         return -1;
 
-	return i-1;
+return i-1;
 
 }
 
@@ -542,6 +542,15 @@ int llread(int app)
             get_chunk(next_chunk, filename, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE, total_file_size);
             char data_packet[PACKETMAXSIZE];
             temp_size = packup_data(data_packet, progresso_do_envio, next_chunk, DATAMAXSIZE);
+
+		
+		for (j= 0; j<temp_size; j++ )
+		{
+			if (j == 0)
+				BCC_2 = data_packet[j];
+			else 
+				BCC_2 = (BCC_2 ^ data_packet[j]);
+		}
             
             envia_e_espera_dados(data_packet, ALTERNATING, temp_size);
             if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
@@ -550,7 +559,15 @@ int llread(int app)
 
 
         //MONTAR O COMANDO FINAL
-        temp_size = packup_control(pack_command, PAK_CMD_LAST, total_number_packets, filename);
+ 	temp_size = packup_control(pack_command, PAK_CMD_LAST, total_number_packets, filename);
+	
+	for (j= 0; j<temp_size; j++ )
+	{
+		if (j == 0)
+			BCC_2 = pack_command[j];
+		else 
+			BCC_2 = (BCC_2 ^ pack_command[j]);
+	}
         envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
         if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
         return 0;
@@ -815,16 +832,24 @@ int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     //Tirar headers dos dados
     char dados_deframed[STUFFED_PACKET_MAXSIZE];  
-    BCC_2 = incoming_frame[i-2];
-	char bcc;
+    char bcc;
     int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
 	if (temp_size < 0 )
-		successo = -1;
-	if ( BCC_2 != bcc)
-		successo = -1;
+		 {successo = -1; printf("desfazer da trama\n");} 
     char dados_destuffed[PACKETMAXSIZE];
-    de_stuffing(dados_deframed,dados_destuffed, temp_size);
+    temp_size -= de_stuffing(dados_deframed,dados_destuffed, temp_size);
+	
+	int j = 0;
+	for (j= 0; j<temp_size; j++ )
+	{
+		if (j == 0)
+			BCC_2 = dados_destuffed[j];
+		else 
+			BCC_2 = (BCC_2 ^ dados_destuffed[j]);
+	}
 
+	if ( BCC_2 != bcc)
+		{successo = -1; printf("%2x, %2x\n", BCC_2, bcc); }
 
     if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
     {
@@ -834,7 +859,10 @@ int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
     else
     {
         if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
-           successo = -1; 
+        {
+		printf("No unpacking()\n");
+	   successo = -1; 
+	}
     }
 
     //Formular resposta
