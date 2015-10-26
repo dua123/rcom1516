@@ -54,14 +54,17 @@
 
 
 static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
-static char UA[5]={FLAG,AE,AE,BCCE,FLAG};
+static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
-extern int fd,fd1,user;
+extern int fd;
 extern struct termios oldtio,newtio;
-char  filename[48];
-int user;
+extern char  filename[48];
 
+extern volatile int STOP;
+extern char Alarm_buffer[FRAME_MAXSIZE];
+
+extern char buf[FRAME_MAXSIZE];
 
 
 

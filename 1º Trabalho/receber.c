@@ -2,30 +2,44 @@
  
 #include "filefunc.h"
  
-volatile int STOP=FALSE;
 int c, res, timeouts = 0;
-char buf[5];
+char buf[FRAME_MAXSIZE];
+int llopen2();
 void atende();
-int llread();
      
      
-    int main(int argc, char** argv)
-    {      
-	user = RECETOR;
+int main(int argc, char** argv)
+{      
+
+	if (	(argc < 2) ||
+            ((strcmp("/dev/ttyS0", argv[1])!=0) &&
+            (strcmp("/dev/ttyS1", argv[1])!=0) &&
+            (strcmp("/dev/ttyS2", argv[1])!=0) &&
+            (strcmp("/dev/ttyS3", argv[1])!=0) &&
+            (strcmp("/dev/ttyS4", argv[1])!=0) )
+        ) 
+    {
+          printf("Usage:\tnserial SerialPort\n\tex: app /dev/ttyS4\n");
+          exit(1);
+    }
+	
     //init
     init(argc, argv);
      
 
-    if(llopen() == 1)
+    if(llopen2() == 1)
         printf("llopen(): Falhou\n");
+
+/*	
+	if (llread(RECETOR) == 1)
+		printf("llread(): Falhou \n");
+	else		
+		printf("llread(): SUCESSO \n"); 
 
     if(llclose() == 1)
         printf("llclose(): Falhou\n");
-	
-	if (llread() == 1)
-		printf("Falhou \n");
-	else		
-		printf("llread(): SUCESSO \n"); 
+*/	
+
 
 
     sleep(2);
@@ -37,9 +51,9 @@ int llread();
      
         close(fd);
         return 0;
-    }
+}
      
-    int llopen(){
+int llopen2(){
      
             //RECEBER SET
             unsigned char * receive = SET;
@@ -74,7 +88,7 @@ int llread();
                                     state = 0;
                             break;
                     case 3: // Espera de BCC
-                            if (pak == SET[3])
+                            if (pak == (char)(SET[2]^SET[1]) )
                                     state++;
                             else if (pak == SET[0])
                                     state = 1;
@@ -108,9 +122,10 @@ int llread();
            
             STOP = FALSE;
             return 0;
-     }
+}
      
-    int llclose(){
+int llclose()
+{
             //RECEBER DISC
             unsigned char * receive = DISC;
             unsigned char pak[5];
@@ -164,90 +179,22 @@ int llread();
             STOP = FALSE;
             return 0;
            
-    }
-         void atende()                   // atende alarme
-    {
-            if (STOP == FALSE && timeouts < 5)
-            {
-                    printf(" Ocorreu time out, re-enviar DISC \n");
-                    timeouts++;
-                    res = write(fd,buf,5);
-                    alarm(3);
-            } else
-            {
-                timeouts = 0;
-            }
-    }
+}
 
- int llread(){
-
-	printf("llread(): A enviar : \n");
-	STOP=FALSE;
-
-     unsigned char * receive = SET;
-     unsigned char pak;
-     int state = 0;
-     while (STOP==FALSE) {
-             usleep(50);
-             read(fd,&pak,1);
-     		printf("%2x : \n",pak);
-             switch (state)
-             {
-             		case 0: //Espera FLAG - F
-                    	if (pak == FLAG)
-                       	{	
-							buf[0]=FLAG;
-                           state++;
-                       	}
-                     break;
-					case 1: //Espera AE ou AR
-                    	if (pak == AE)
-                       	{
-						   buf[1]=AE;
-                           state++;
-                       	}else if(pak==AR){
-						   buf[1]=AR;
-                           state++;
-						}
-                     break;
-					case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
-                    	if (pak == CSET)
-                       	{
-						   buf[2]=CSET;
-                           state++;
-                       	}else if(pak==CDISC){
-						   buf[2]=CDISC;
-                           state++;
-						}//continuar mais tarde só para motivos de testes
-                     break;
-					case 3: //Espera xor entre buf[1])^buf[2]
-                    	if (pak == (char)(buf[1])^buf[2])
-                       	{
-						   buf[3]=(char)(buf[1])^buf[2];
-                           state++;
-                       	}
-                     break;
-					case 4: //Espera AE ou AR
-                    	if (pak == FLAG)
-                       	{
-						   buf[4]=FLAG;
-                           state++;
-                       	}
-                     break;
-					case 5: //Espera AE ou AR
-						STOP=TRUE;
-                     break;
-			}
-	}
-
-
-
-
-	printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
 	
+void atende()	// atende alarme
+{
+	if (STOP == FALSE && timeouts < 5)
+	{
+			printf(" Ocorreu time out, re-enviar DISC \n");
+			timeouts++;
+			res = write(fd,buf,5);
+			alarm(3);
+	} else
+	{
+		timeouts = 0;
+	}
+}
 
-	return 0;
-
-}  
     
  

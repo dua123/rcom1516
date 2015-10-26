@@ -1,41 +1,103 @@
 #include "filefunc.h"
 
-int fd,fd1;
+
+int fd;
 struct termios oldtio,newtio;
 
-void init(int argc, char** argv)
-{
-    
+volatile int STOP=FALSE; // flag dos alarmes llopen
+char Alarm_buffer[FRAME_MAXSIZE];
 
-    if (    (argc < 2) ||
-            ((strcmp("/dev/ttyS0", argv[1])!=0) &&
-            (strcmp("/dev/ttyS1", argv[1])!=0) &&
-            (strcmp("/dev/ttyS2", argv[1])!=0) &&
-            (strcmp("/dev/ttyS3", argv[1])!=0) &&
-            (strcmp("/dev/ttyS4", argv[1])!=0) )
-        ) 
-    {
-          printf("Usage:\tnserial SerialPort\n\tex: app /dev/ttyS4\n");
-          exit(1);
-    }
-	//verificao se existe o ficheiro pretendido 
-	//O_EXCL          error if create and file exists
-	/*if(user==RECETOR){
-		fd1 = open(argv[2], O_RDWR | O_NOCTTY | O_EXCL);
-	}else{
-		fd1 = open(argv[2], O_RDWR | O_NOCTTY );	
+
+int llread(int app)
+{
+	if (app == EMISSOR)
+	{
+		sleep(1);
+		int num;
+		printf("llread(): A enviar : \n");
+
+		if(fazer_trama_supervisao(buf,TYPE_SET,EMISSOR, 0)==-1)
+			return 1;
+		num =write(fd,buf,5);
+		printf(" numero de bytes %d \n",num);
+		printf("%2x, %2x, %2x, %2x, %2x\n",buf[0],buf[1],buf[2],buf[3],buf[4]);
+
+		return 0;
+		
+	} else if (app == RECETOR)
+	{
+	printf("llread(): A enviar : \n");
+	STOP=FALSE;
+
+	unsigned char * receive = SET;
+	unsigned char pak;
+	int state = 0;
+		while (STOP==FALSE) 
+		{
+			usleep(50);
+			read(fd,&pak,1);
+			printf("%2x : \n",pak);
+			switch (state)
+			{
+				case 0: //Espera FLAG - F
+					if (pak == FLAG)
+					{	
+						buf[0]=FLAG;
+					   state++;
+					}
+				break;
+				case 1: //Espera AE ou AR
+					if (pak == AE)
+					{
+					   buf[1]=AE;
+					   state++;
+					}else if(pak==AR){
+					   buf[1]=AR;
+					   state++;
+					}
+				break;
+				case 2: //Espera CSET CDISC CUA CRR(r_num) CREJ(r_num)
+					if (pak == CSET)
+					{
+					   buf[2]=CSET;
+					   state++;
+					}else if(pak==CDISC){
+					   buf[2]=CDISC;
+					   state++;
+					}//continuar mais tarde só para motivos de testes
+				break;
+				case 3: //Espera xor entre buf[1])^buf[2]
+					if (pak == (char)(buf[1])^buf[2])
+					{
+					   buf[3]=(char)(buf[1])^buf[2];
+					   state++;
+					}
+				break;
+				case 4: //Espera AE ou AR
+					if (pak == FLAG)
+					{
+					   buf[4]=FLAG;
+					   state++;
+					}
+				break;
+				case 5: //Espera AE ou AR
+					STOP=TRUE;
+				break;
+			}
+		}
+	printf("%2x, %2x, %2x, %2x, %2x: \n",buf[0],buf[1],buf[2],buf[3],buf[4]);
+	return 0;	
 	}
-	if (fd1 <0) 
-    {
-        perror(argv[2]); exit(-1); 
-    }
-	 strcpy(filename, argv[2]);// adicao do filename 
-*/
-    /*
-        Open serial port device for reading and writing and not as controlling tty
-        because we don't want to get killed if linenoise sends CTRL-C.
-    */
- 
+	else
+		return -1;
+
+	
+	
+}
+
+
+void init(int argc, char** argv)
+{ 
     fd = open(argv[1], O_RDWR | O_NOCTTY );
     if (fd <0) 
     {
@@ -104,7 +166,6 @@ int byte_stuffing_encode(char * trama, char * res, int size)
     }
     return count;
 }
- 
 int de_stuffing(char * trama,char * res, int size)
 {
     int i, j=0;  
@@ -162,8 +223,6 @@ long file_to_buffer(char * buffer, char * name)
     printf("file_to_buffer(): Tamanho do ficheiro: %lu \n", file_size);
     return file_size;
 }
- 
- 
 int buffer_to_file(char * buffer, char * name, long file_size)
 {
     FILE * fp = fopen(name, "a+");
@@ -220,7 +279,6 @@ int packup_data(char * res, int n_seq, char * data, int data_size)
     memcpy(&res[4], &data[0], data_size);
     return data_size+4;
 }
-
 int packup_control(char * res, int command, unsigned int pack_amount, char * file_name)
 {
     if (! (command == 1 || command == 2) )
@@ -342,6 +400,7 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 	return i-1;
 
 }
+
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
 {
 	res[0] = FLAG;
@@ -376,7 +435,13 @@ int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
 	res[4] = FLAG;
 
 	return 0;
-
+}
+int fazer_trama_resposta(char * res, char * buf)
+{
+	if (buf[0] != FLAG)
+		return -1;
+    
+	
 }
 
 
@@ -409,3 +474,62 @@ int test_file_chunking(char * source_filename, char * dest_filename){
     if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
                 printf("SUCESSO");
 }
+
+
+int llopen(int app)
+{
+	if (app == EMISSOR)
+	{
+		//Construir Trama SET
+        char SET_frame[5];
+		fazer_trama_supervisao(SET_frame, TYPE_SET, EMISSOR, 0);
+        memcpy(&Alarm_buffer[0], &SET_frame[0], 5);
+		
+		//Preparar a função de timeout
+		(void) signal(SIGALRM, timeout);
+		
+		
+		//Ciclo de Espera
+		printf("llopen(): A enviar SET: \n");
+		while(STOP==FALSE)
+		{
+            alarm(3);
+			int res = write(fd,Alarm_buffer,5);
+			printf("llopen(): %d bytes written on fd: %d\n", res, fd);
+
+			//RECEBER SET
+			printf("llopen(): Vou esperar por UA \n");
+			unsigned char pak[5];
+			usleep(50);
+			res = read(fd,&pak,5);
+			printf("llopen(): %d bytes read\n", res);
+			if ((char)pak[0] == (char)UA[0] && (char)pak[1] == (char)UA[1] && (char)pak[2] == (char)UA[2] && (char)pak[3] == (char)UA[3] && (char)pak[4] == (char)UA[4])
+			{
+				printf("llopen(): Recebi UA \n");
+				STOP = TRUE;
+			}
+			else
+			{
+				return 1;
+			}
+		   
+			sleep(2);
+			   
+		}
+		STOP = FALSE;
+		return 0;      
+	}
+	
+	return -1;
+}
+
+void timeout()                   // atende alarme
+{
+	if (STOP == FALSE)
+	{
+		printf("Ocorreu time out\n");
+		write(fd,Alarm_buffer,5);
+		alarm(3);
+	}
+}
+

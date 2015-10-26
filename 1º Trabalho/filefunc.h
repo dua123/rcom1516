@@ -4,6 +4,10 @@
 
 #include "global.h"
 
+int llopen(int app);
+int llread(int app);
+
+
 
 void init(int argc, char** argv);
 
@@ -24,6 +28,8 @@ int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char 
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
 
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
+int fazer_trama_resposta(char * res, char * buf);
 
+void timeout();
 
 #endif
