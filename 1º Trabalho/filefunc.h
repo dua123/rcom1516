@@ -28,7 +28,12 @@ int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char 
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
 
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
-int fazer_trama_resposta(char * res, char * buf);
+int fazer_trama_resposta(char * res, char * msg);
+
+
+int espera_e_responde_superv(char * msg, char * res);
+int envia_e_espera_superv(char * msg, char * res);
+int envia_e_espera_dados(char * msg, char * res);
 
 void timeout();
 

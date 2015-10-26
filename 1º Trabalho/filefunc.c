@@ -436,11 +436,24 @@ int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
 
 	return 0;
 }
-int fazer_trama_resposta(char * res, char * buf)
+int fazer_trama_resposta(char * res, char * msg)
 {
-	if (buf[0] != FLAG)
+	if (msg[0] != FLAG)
 		return -1;
-    
+    res[0] = msg[0];
+    res[1] = msg[1];
+    if (msg[2] == SET[2])
+    {
+        res[2] = UA[2];
+        res[3] = (UA[2]^UA[1]);
+    } else if (msg[2] == DISC[2])
+    {
+        res[2] = DISC[2];
+        res[3] = (DISC[2]^DISC[1]);
+    }
+    res[4] = msg[4];
+
+    return 0;
 	
 }
 
@@ -483,44 +496,13 @@ int llopen(int app)
 		//Construir Trama SET
         char SET_frame[5];
 		fazer_trama_supervisao(SET_frame, TYPE_SET, EMISSOR, 0);
-        memcpy(&Alarm_buffer[0], &SET_frame[0], 5);
-		
-		//Preparar a função de timeout
-		(void) signal(SIGALRM, timeout);
-		
-		
-		//Ciclo de Espera
-		printf("llopen(): A enviar SET: \n");
-		while(STOP==FALSE)
-		{
-            alarm(3);
-			int res = write(fd,Alarm_buffer,5);
-			printf("llopen(): %d bytes written on fd: %d\n", res, fd);
 
-			//RECEBER SET
-			printf("llopen(): Vou esperar por UA \n");
-			unsigned char pak[5];
-			usleep(50);
-			res = read(fd,&pak,5);
-			printf("llopen(): %d bytes read\n", res);
-			if ((char)pak[0] == (char)UA[0] && (char)pak[1] == (char)UA[1] && (char)pak[2] == (char)UA[2] && (char)pak[3] == (char)UA[3] && (char)pak[4] == (char)UA[4])
-			{
-				printf("llopen(): Recebi UA \n");
-				STOP = TRUE;
-			}
-			else
-			{
-				return 1;
-			}
-		   
-			sleep(2);
-			   
-		}
-		STOP = FALSE;
-		return 0;      
-	}
-	
-	return -1;
+		char SET_resp[5];
+        if (fazer_trama_resposta(SET_resp, SET_frame) == -1)
+            return -1;
+        int final = envia_e_espera_superv(SET_frame, SET_resp);
+		return final;
+    }
 }
 
 void timeout()                   // atende alarme
@@ -529,7 +511,87 @@ void timeout()                   // atende alarme
 	{
 		printf("Ocorreu time out\n");
 		write(fd,Alarm_buffer,5);
-		alarm(3);
+		alarm(2);
 	}
 }
 
+
+int espera_e_responde_superv(char * msg, char * res)
+{
+	
+}
+int envia_e_espera_superv(char * msg, char * res)
+{
+	//Preparar a função de timeout
+	memcpy(&Alarm_buffer[0], &msg[0], 5);
+	(void) signal(SIGALRM, timeout);
+
+	alarm(2);
+	write(fd,Alarm_buffer,5);
+	
+	//Ciclo de Espera
+	unsigned char pak;
+	
+	
+    int state = 0;
+	while(STOP==FALSE)
+	{	
+        printf("state: %d\n", state);		
+		usleep(50);
+		read(fd,&pak,1);
+        switch (state)
+		{
+		case 0: //Espera FLAG - F
+			if (pak == (char)res[0])
+			{
+				state++;
+			}
+			break;
+		case 1: //Espera Edreço - A
+			if (pak == (char)res[1])
+				state++;
+			else if (pak == (char)res[0])
+				;
+			else
+				state = 0;
+			break;
+		case 2: // Espera Controlo - C
+			if (pak == (char)res[2])
+				state++;
+			else if (pak == (char)res[0])
+				state = 1;
+			else
+				state = 0;
+			break;
+		case 3: // Espera de BCC
+			if (pak == (char)res[3])
+				state++;
+			else if (pak == (char)res[0])
+				state = 1;
+			else
+				state = 0;
+			break;
+		case 4: // Espera Flag - F
+			if (pak == (char)res[4])
+			{
+				printf("llopen(): Recebi UA \n");
+				state = 0;
+				STOP = TRUE;
+				sleep(2);
+				STOP = FALSE;
+				return 0;  
+					
+			}
+			else
+				state = 0;
+			break;
+		}
+	}	
+	
+	return -1;
+}
+
+int envia_e_espera_dados(char * msg, char * res)
+{
+	
+}
