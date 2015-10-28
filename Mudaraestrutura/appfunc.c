@@ -98,10 +98,7 @@ int Logic_Emissor()
     //MONTAR O COMANDO INCIAL
     int temp_size = packup_control(Appdata.pack_sent, PAK_CMD_FIRST);
 
-
-    
     //ENVIAR A TRAMA DE INFORMACAO INICIAL
-    //envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
     llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
 
     /*
@@ -119,15 +116,15 @@ int Logic_Emissor()
         if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
     }
 
+    */
 
 
     //MONTAR O COMANDO FINAL
-    temp_size = packup_control(pack_command, PAK_CMD_LAST, total_number_packets, filename);
-    envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
-    if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-   
-    */
+    temp_size = packup_control(Appdata.pack_sent, PAK_CMD_LAST);
 
+    //ENVIAR O COMANDO FINAL
+    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);  
+    
     return 0;
 }
 
@@ -151,7 +148,7 @@ int Logic_Recetor()
         Appdata.total_number_packets = unpack_control(Appdata.pack_received, PAK_CMD_FIRST, Appdata.filename);
         if(Appdata.total_number_packets == -1)
             success = -1;
-        printf("N pacotes: %d, Nome Ficheiro: %s\n", Appdata.total_number_packets, Appdata.filename);
+        //printf("N pacotes: %d, Nome Ficheiro: %s\n", Appdata.total_number_packets, Appdata.filename);
 
         //Eviar resposta
         enviar_RR_REJ(success);
@@ -171,17 +168,32 @@ int Logic_Recetor()
 
         buffer_to_file(received_data, filename, DATAMAXSIZE);
     }
-
-    //ESPERA PELO COMANDO final
-    success = -1;
-    while (success != 0)
-        success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0, received_data);
-    if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
     */
 
-    return 0;
-    
+    //ESPERA PELO COMANDO FINAL
+    success = -1;
+    while (success != 0)
+    {
+        success = 0;
 
+        int size_read = llread(Appdata.fd_porta, Appdata.pack_received);
+        if ( size_read == -1)
+        {
+            success = -1;
+            printf("llread(): ERRO \n");    
+        }
+
+        //Verificaçoes
+        Appdata.total_number_packets = unpack_control(Appdata.pack_received, PAK_CMD_LAST, Appdata.filename);
+        if(Appdata.total_number_packets == -1)
+            success = -1;
+        //printf("N pacotes: %d, Nome Ficheiro: %s\n", Appdata.total_number_packets, Appdata.filename);
+
+        //Eviar resposta
+        enviar_RR_REJ(success);
+    }
+
+    return 0;
 }
 
 
