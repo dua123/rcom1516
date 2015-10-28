@@ -1,11 +1,13 @@
 #include "linkfunc.h"
 
 
-volatile int STOP=FALSE;
-char Alarm_buffer[FRAME_MAXSIZE];
+//volatile int STOP=FALSE;
+//char Alarm_buffer[FRAME_MAXSIZE];
 
-int llopen(int app)
-{
+
+
+/*
+int llopen(int app){
 
     //Construir Trama SET
     char SET_frame[5];
@@ -29,6 +31,17 @@ int llopen(int app)
 
 
     return -1;
+}
+*/
+/*
+void timeout()
+{
+    if (STOP == FALSE)
+    {
+        printf("Ocorreu time out\n");
+        write(fd,Alarm_buffer,5);
+        alarm(1);
+    }
 }
 int llclose(int app)
 {
@@ -70,7 +83,6 @@ int llclose(int app)
 
     return final;   
 }
-
 int llwrite(int app, char * buffer, int length)
 {
 
@@ -345,23 +357,6 @@ int envia_e_espera_superv(char * msg, char * res)
 	
 	return -1;
 }
-
-
-
-
-void timeout()
-{
-	if (STOP == FALSE)
-	{
-		printf("Ocorreu time out\n");
-		write(fd,Alarm_buffer,5);
-		alarm(1);
-	}
-}
-
-
-
-
 int byte_stuffing_encode(char * trama, char * res, int size)
 {
        
@@ -694,3 +689,5 @@ int envia_e_espera_dados(char * dados, int s, int size)
     
     return -1;
 }
+
+*/

@@ -16,11 +16,8 @@
 
 
 
-#define FALSE 0
-#define TRUE 1
 
-#define EMISSOR 0
-#define RECETOR 1
+//REMOVER???
 
 #define BUFFLENGTH 1000000
 
@@ -59,13 +56,7 @@ static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
 static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
 static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
 
-extern int fd;
-extern int user;
-extern struct termios oldtio,newtio;
-extern FILE * image_fd;
 
-
-extern char  filename[48];
 extern int total_number_packets;
 
 extern volatile int STOP;

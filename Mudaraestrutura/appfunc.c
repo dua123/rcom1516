@@ -1,16 +1,15 @@
 #include "appfunc.h"
 
-char filename[48];
-int fd;
-struct termios oldtio,newtio;
-int total_number_packets;
+#define EMISSOR 0
+#define RECETOR 1
+
+struct applicationLayer Appdata;
 
 
- 
-int proccess_arguments(int argc, char** argv)
-{
 
-    if (    (argc < 3) ||
+int proccess_arguments(int argc, char** argv){
+
+    if ((argc < 3) ||
         ((strcmp("/dev/ttyS0", argv[1])!=0) &&
         (strcmp("/dev/ttyS1", argv[1])!=0) &&
         (strcmp("/dev/ttyS2", argv[1])!=0) &&
@@ -21,7 +20,6 @@ int proccess_arguments(int argc, char** argv)
         printf("Usage:\tnserial SerialPort\n\tex: ./app /dev/ttyS4 user\n");
         exit(1);
     }
-
     if ( strcmp(argv[2], "emissor") == 0 )
         Appdata.status = EMISSOR;
     else if ( strcmp(argv[2], "recetor") == 0 )
@@ -31,8 +29,6 @@ int proccess_arguments(int argc, char** argv)
         printf("O terceiro argumento deve ser 'emissor' OU 'recetor'\n");
         return -1;
     }
-
-
     if(Appdata.status == EMISSOR)
     {
         if (argc != 4)
@@ -40,27 +36,26 @@ int proccess_arguments(int argc, char** argv)
             printf("E necessario um quarto argumento para o emissor:\n\t./app /dev/ttyS4 emissor filename\n");
             exit(1);
         }
-        strcpy(filename,argv[3]);
-        FILE * image_fd = fopen(argv[3], "r");
-        if (image_fd == NULL)
+        strcpy(Appdata.filename,argv[3]);
+        Appdata.fileDescriptor = fopen(argv[3], "r");
+        if (Appdata.fileDescriptor == NULL)
         {
             printf("File doesn't exist!\n");
             return -1;
         }
-        fclose(image_fd);
+
     }
     printf("User: %d\n", Appdata.status);
-
     return 0;
 }
 void init(int argc, char** argv){ 
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd <0) 
+    Appdata.porta = open(argv[1], O_RDWR | O_NOCTTY );
+    if (Appdata.porta <0) 
     {
         perror(argv[1]); exit(-1); 
     }
  
-    if ( tcgetattr(fd,&oldtio) == -1) /* save current port settings */
+    if ( tcgetattr(Appdata.porta,&oldtio) == -1)
     { 
       perror("tcgetattr");
       exit(-1);
@@ -71,36 +66,31 @@ void init(int argc, char** argv){
     newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
- 
-    /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
- 
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 1 chars received */
-    /*
-        VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a
-        leitura do(s) próximo(s) caracter(es)
-    */
+    newtio.c_cc[VTIME]    = 0; 
+    newtio.c_cc[VMIN]     = 1; 
 
-    tcflush(fd, TCIOFLUSH);
+
+    tcflush(Appdata.porta, TCIOFLUSH);
  
-    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+    if ( tcsetattr(Appdata.porta,TCSANOW,&newtio) == -1) {
       perror("tcsetattr");
       exit(-1);
     }
-
     printf("New termios structure set\n");
 }
 void finalize(){
     usleep(50);
-    if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+    if ( tcsetattr(Appdata.porta,TCSANOW,&oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
     }
-    close(fd);
+    if (Appdata.status == EMISSOR)   
+        fclose(Appdata.fileDescriptor);
+    close(Appdata.porta);
 }
 
-
+/*
 
 long file_byte_size(char * name)
 {
@@ -268,3 +258,5 @@ int unpack_control(char * pak, int command, char * file_name)
 
     return pack_amount;
 }
+
+*/
