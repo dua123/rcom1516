@@ -73,6 +73,7 @@ int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2);
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
 
 int espera_dados();
+int enviar_RR_REJ(int successo);
 int envia_e_espera_dados(int size);
 
 

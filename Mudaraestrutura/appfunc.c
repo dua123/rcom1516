@@ -138,18 +138,23 @@ int Logic_Recetor()
     int success = -1;
     while (success != 0)
     {
+        success = 0;
 
         int size_read = llread(Appdata.fd_porta, Appdata.pack_received);
         if ( size_read == -1)
         {
+            success = -1;
             printf("llread(): ERRO \n");    
         }
 
         //Verificaçoes
-        
-            //espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
+        Appdata.total_number_packets = unpack_control(Appdata.pack_received, PAK_CMD_FIRST, Appdata.filename);
+        if(Appdata.total_number_packets == -1)
+            success = -1;
+        printf("N pacotes: %d, Nome Ficheiro: %s\n", Appdata.total_number_packets, Appdata.filename);
 
-        success = 0;
+        //Eviar resposta
+        enviar_RR_REJ(success);
     }
     
 
@@ -304,27 +309,6 @@ int packup_control(char * res, int command)
 
     return (7 + strlen(Appdata.filename));
 }
-/*
-int unpack_data(char * res, uint8_t n_seq, char * data)
-{
-
-    if(data[0] != 0x00)
-    {
-        printf("unpack_data(): This wasn't a Data Packet\n");
-        return -1;
-    }
-    if(data[1] != n_seq)
-    {
-        printf("unpack_data(): Wrong sequence number\n");
-        return -1;
-    }
-
-    int read_size = 256 * data[2]  + data[3];
-
-    memcpy(&res[0], &data[4], read_size);
-
-    return 0;
-}
 int unpack_control(char * pak, int command, char * file_name)
 {
 
@@ -348,6 +332,28 @@ int unpack_control(char * pak, int command, char * file_name)
     }
 
     return pack_amount;
+}
+
+/*
+int unpack_data(char * res, uint8_t n_seq, char * data)
+{
+
+    if(data[0] != 0x00)
+    {
+        printf("unpack_data(): This wasn't a Data Packet\n");
+        return -1;
+    }
+    if(data[1] != n_seq)
+    {
+        printf("unpack_data(): Wrong sequence number\n");
+        return -1;
+    }
+
+    int read_size = 256 * data[2]  + data[3];
+
+    memcpy(&res[0], &data[4], read_size);
+
+    return 0;
 }
 
 */

@@ -289,6 +289,9 @@ int llread(int port_fd, char * message)
     int tamanho_destuffed = tamanho_deframed - de_stuffing(dados_deframed,dados_destuffed, tamanho_deframed);
 
     //E preciso verificar BCC2
+    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
+    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
+    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
 
     //copiar para buffer
     memcpy(message, dados_destuffed, tamanho_destuffed);
@@ -391,35 +394,15 @@ int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
     {
-        total_number_packets = unpack_control(dados_destuffed, type, filename);
-        //printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
     }   
     else
     {
         if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
            successo = -1; 
     }
-
-    //Formular resposta
-    char trama_resposta[5];
-    int r;
-    if (successo == 0)
-    {
-        if (s == 0)  r = 1; else r = 0;
-        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, r);
-    } else
-    {
-        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, s);
-    }
-
-    //Enviar
-    write(fd,trama_resposta,5);
-    //if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
-
     return successo;
 }
 */
-
 /*
 int test_file_chunking(char * source_filename, char * dest_filename){
     char buf_ficheiro[BUFFLENGTH];
@@ -546,6 +529,26 @@ int envia_e_espera_dados(int size)
     }   
 
     return -1;
+}
+int enviar_RR_REJ(int successo)
+{
+
+    char trama_resposta[5];
+    if (successo == 0)
+    {
+        if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, Linkdata.ALTERNATING);
+    } 
+    else
+    {
+        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, Linkdata.ALTERNATING);
+    }
+
+    write(Linkdata.portfd,trama_resposta,5);
+
+    
+
+        //espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
 }
 
 int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2){
