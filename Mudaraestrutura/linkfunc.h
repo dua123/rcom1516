@@ -38,7 +38,6 @@ static char DISC[5]={FLAG,AE,CDISC,	0,FLAG};
 
 
 struct linkLayer{
-	int portfd;
 	int baudRate;
 	unsigned int n_seq;
 	unsigned int timeout;
@@ -46,13 +45,16 @@ struct linkLayer{
 	
 	char frame_envio[526];
 	char frame_resposta[526];
+
+	int portfd;
+	int user;
 };
 
 
 int llopen(int port, int user);
-//int llwrite(int app, char * buffer, int length);
-//int llread(int app);
-//int llclose(int app);
+//int llwrite(char * buffer, int length);
+//int llread();
+int llclose(int port_fd);
 
 
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num);

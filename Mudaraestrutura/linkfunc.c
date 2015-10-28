@@ -9,6 +9,7 @@ volatile int STOP=FALSE;
 int llopen(int port, int user){
 
     //Mudar isto depois
+    Linkdata.user = user;
     Linkdata.portfd = port;
 
     //Construir Trama SET e UA
@@ -228,53 +229,56 @@ void timeout()
     }
 }
 
-/*
-int llclose(int user)
-{
-    //Construir Trama SET
-    char DISC_frame[5];
-    fazer_trama_supervisao(DISC_frame, TYPE_DISC, EMISSOR, 0);
 
-    char DISC_resp[5];
-    if (fazer_trama_resposta(DISC_resp, DISC_frame) == -1)
+int llclose(int port_fd)
+{
+
+    //Construir Trama SET
+    if(fazer_trama_supervisao(Linkdata.frame_envio, TYPE_DISC, EMISSOR, 0) == -1)
+        return -1;
+    if (fazer_trama_resposta(Linkdata.frame_resposta, Linkdata.frame_envio) == -1)
         return -1;
 
+    
     int final = 0;
-    if(user == EMISSOR)
+    if(Linkdata.user == EMISSOR)
     {
-        final = envia_e_espera_superv(DISC_frame, DISC_resp);
+        final = envia_e_espera_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
         if (final != -1)
         {
-            fazer_trama_supervisao(DISC_frame, TYPE_UA, EMISSOR, 0);
-            write(fd,DISC_frame,5);
+            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
+            write(port_fd,Linkdata.frame_envio,5);
         }
         return final;
     }
-    else if(user == RECETOR)
+    else if(Linkdata.user == RECETOR)
     {
-        final = espera_e_responde_superv(DISC_frame, DISC_resp);
+        final = espera_e_responde_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
         if (final != -1)
         {
-            fazer_trama_supervisao(DISC_frame, TYPE_UA, EMISSOR, 0);
+            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
             int i; final = 0; char pak;
             for (i = 0; i < 5; i++)
             {   
-                read(fd,&pak,1);
-                if (pak != (char)DISC_frame[i])
+                read(port_fd,&pak,1);
+                if (pak != (char)Linkdata.frame_envio[i])
                     final = -1;
             }
         }
         
     }
+    
 
-    return final;   
+    return -1;   
 }
-int llwrite(int user, char * buffer, int length)
+
+/*
+int llwrite(char * buffer, int length)
 {
 
     return 0;
 }
-int llread(int user)
+int llread()
 {
     if(user == EMISSOR)
     {

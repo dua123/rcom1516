@@ -14,24 +14,20 @@ int main(int argc, char** argv)
         printf("llopen(): Falhou\n");
     else
         printf("llopen(): SUCESSO\n");
-
-
-    
-
  
     /*
     if (llread( Appdata.user) == 1)
         printf("llread(): Falhou \n");
     else        
         printf("llread(): SUCESSO \n"); 
+    */
 
-
-    if (llclose( Appdata.user ) == 1)
+    if (llclose( Appdata.porta ) == 1)
 		printf("llclose():Falhou \n");
 	else		
 		printf("llclose(): SUCESSO \n"); 
     
-    */
+    
     
 
 
