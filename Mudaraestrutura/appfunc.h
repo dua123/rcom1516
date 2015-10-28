@@ -7,13 +7,27 @@
 #define FALSE 0
 #define TRUE 1
 
+#define EMISSOR 0
+#define RECETOR 1
+
+#define DATAMAXSIZE 256
+#define PACKETMAXSIZE 260
+
+#define PAK_CMD_FIRST	1
+#define PAK_CMD_DATA	0
+#define PAK_CMD_LAST	2
+
 struct applicationLayer {
 	char filename[255];
 	FILE * fileDescriptor;
+
 	int porta;
-	int status;
+	int fd_porta;
+
+	int user;
 	int total_number_packets;
 } Appdata;
+
 
 struct termios oldtio,newtio;
 

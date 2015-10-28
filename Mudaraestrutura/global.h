@@ -15,52 +15,12 @@
 #include <stdint.h>
 
 
-
-
-//REMOVER???
-
-#define BUFFLENGTH 1000000
-
-#define DATAMAXSIZE 256
-#define PACKETMAXSIZE 260
-#define STUFFED_PACKET_MAXSIZE 520
-#define FRAME_MAXSIZE 526
-
 #define BAUDRATE B38400
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
+#define _POSIX_SOURCE 1
 
 
-#define FLAG 	0x7e
-#define AE 		0x03
-#define AR 		0x01
-#define CSET 	0x07
-#define CDISC 	0x0b
-#define CUA 	0x03
-#define BCCR 	0x00
-#define BCCE 	0xFF
-#define CRR(r) ((r << 5 )|1)
-#define CREJ(r) ((r << 5 )|5)
-#define CDATA(s) (s << 5)
-
-#define TYPE_SET 	1
-#define TYPE_DISC 	2
-#define TYPE_UA 	3
-#define TYPE_RR 	4
-#define TYPE_REJ 	5
-
-#define PAK_CMD_FIRST	1
-#define PAK_CMD_DATA	0
-#define PAK_CMD_LAST	2
-
-static char SET[5]={FLAG, AE, CSET ,AR,FLAG };
-static char UA[5]={FLAG,AE,CUA,BCCE,FLAG};
-static char DISC[5]={FLAG,AE,CDISC,BCCR,FLAG};
-
-
-extern int total_number_packets;
-
-extern volatile int STOP;
-extern char Alarm_buffer[FRAME_MAXSIZE];
+//extern volatile int STOP;
+//extern char Alarm_buffer[FRAME_MAXSIZE];
 
 
 #endif

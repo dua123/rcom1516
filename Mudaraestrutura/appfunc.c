@@ -1,12 +1,5 @@
 #include "appfunc.h"
 
-#define EMISSOR 0
-#define RECETOR 1
-
-struct applicationLayer Appdata;
-
-
-
 int proccess_arguments(int argc, char** argv){
 
     if ((argc < 3) ||
@@ -21,15 +14,15 @@ int proccess_arguments(int argc, char** argv){
         exit(1);
     }
     if ( strcmp(argv[2], "emissor") == 0 )
-        Appdata.status = EMISSOR;
+        Appdata.user = EMISSOR;
     else if ( strcmp(argv[2], "recetor") == 0 )
-        Appdata.status = RECETOR;
+        Appdata.user = RECETOR;
     else
     {
         printf("O terceiro argumento deve ser 'emissor' OU 'recetor'\n");
         return -1;
     }
-    if(Appdata.status == EMISSOR)
+    if(Appdata.user == EMISSOR)
     {
         if (argc != 4)
         {
@@ -45,7 +38,7 @@ int proccess_arguments(int argc, char** argv){
         }
 
     }
-    printf("User: %d\n", Appdata.status);
+    printf("User: %d\n", Appdata.user);
     return 0;
 }
 void init(int argc, char** argv){ 
@@ -85,7 +78,7 @@ void finalize(){
         perror("tcsetattr");
         exit(-1);
     }
-    if (Appdata.status == EMISSOR)   
+    if (Appdata.user == EMISSOR)   
         fclose(Appdata.fileDescriptor);
     close(Appdata.porta);
 }
