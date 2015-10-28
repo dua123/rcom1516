@@ -72,8 +72,6 @@ extern volatile int STOP;
 extern char Alarm_buffer[FRAME_MAXSIZE];
 
 
-
-
 #endif
 
 

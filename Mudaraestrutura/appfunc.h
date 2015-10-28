@@ -5,6 +5,11 @@
 #include "global.h"
 
 
+struct applicationLayer {
+	int fileDescriptor;
+	int status;
+} Appdata;
+
 int proccess_arguments(int argc, char** argv);
 void init(int argc, char** argv);
 void finalize();

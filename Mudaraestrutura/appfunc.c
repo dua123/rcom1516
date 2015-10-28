@@ -1,8 +1,5 @@
 #include "appfunc.h"
 
-
-
-int user;
 char filename[48];
 int fd;
 struct termios oldtio,newtio;
@@ -26,9 +23,9 @@ int proccess_arguments(int argc, char** argv)
     }
 
     if ( strcmp(argv[2], "emissor") == 0 )
-        user = EMISSOR;
+        Appdata.status = EMISSOR;
     else if ( strcmp(argv[2], "recetor") == 0 )
-        user = RECETOR;
+        Appdata.status = RECETOR;
     else
     {
         printf("O terceiro argumento deve ser 'emissor' OU 'recetor'\n");
@@ -36,7 +33,7 @@ int proccess_arguments(int argc, char** argv)
     }
 
 
-    if(user == EMISSOR)
+    if(Appdata.status == EMISSOR)
     {
         if (argc != 4)
         {
@@ -52,7 +49,7 @@ int proccess_arguments(int argc, char** argv)
         }
         fclose(image_fd);
     }
-    printf("User: %d\n", user);
+    printf("User: %d\n", Appdata.status);
 
     return 0;
 }

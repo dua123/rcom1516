@@ -137,7 +137,7 @@ int llread(int app)
         int progresso_do_envio;
         for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
         {
-            printf("|");
+            printf("|"); fflush(stdout);
             success = -1;
             while (success != 0)
                 success = espera_e_responde_dados(PAK_CMD_DATA, ALTERNATING, progresso_do_envio, received_data);
@@ -145,7 +145,6 @@ int llread(int app)
 
             buffer_to_file(received_data, filename, DATAMAXSIZE);
         }
-
 
         //ESPERA PELO COMANDO final
         success = -1;
