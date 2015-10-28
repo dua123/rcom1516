@@ -14,13 +14,8 @@
 #include <errno.h>		
 #include <stdint.h>
 
-
-#define BAUDRATE B38400
 #define _POSIX_SOURCE 1
 
-
-//extern volatile int STOP;
-//extern char Alarm_buffer[FRAME_MAXSIZE];
 
 
 #endif

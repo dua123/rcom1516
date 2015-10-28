@@ -270,210 +270,157 @@ void timeout()
     }
 }
 
-int llwrite(int port_fd, char * message, int length)
+
+
+int llread(int port_fd, char * message)
 {
-    //preparar os dados
-    char stuffed_data[STUFFED_PACKET_MAXSIZE];
-    int temp_size = 
-        length + byte_stuffing_encode(message, stuffed_data, length);
-    char bcc = (AE^CDATA(Linkdata.ALTERNATING)); //completar bcc
-    Fazer_trama(temp_size, stuffed_data, Linkdata.ALTERNATING, Linkdata.frame_envio, &bcc);
-
-    //Formular a resposta esperada
-    int r; if (Linkdata.ALTERNATING == 0)  r = 1; else r = 0;
-    fazer_trama_supervisao(Linkdata.frame_resposta, TYPE_RR, EMISSOR, r);
+    Linkdata.portfd = port_fd;
+    int tamanho_frame = espera_dados();     //Linkdata.frame_resposta
 
 
-    //Envio da trama e recepçao de respostas
-    //envia_e_espera_dados();
+    //Tirar headers dos dados
+    char dados_deframed[STUFFED_PACKET_MAXSIZE]; 
+    char BCC2; 
+    int tamanho_deframed = Desfazer_trama(Linkdata.frame_resposta, dados_deframed, Linkdata.ALTERNATING, &BCC2);
 
-    if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+
+    //Tirar stuffing aos dados
+    char dados_destuffed[PACKETMAXSIZE];
+    int tamanho_destuffed = tamanho_deframed - de_stuffing(dados_deframed,dados_destuffed, tamanho_deframed);
+
+    //E preciso verificar BCC2
+
+    //copiar para buffer
+    memcpy(message, dados_destuffed, tamanho_destuffed);
 
     return 0;
 }
 
-int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
-
-    if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
-        return -1;  
-
-    res[0] = FLAG;
-    res[1] = AE;
-    res[2] = CDATA(controlo);
-    res[3] = (AE ^ CDATA(controlo));
-
-    memcpy(&res[4], &dados[0], tamanho_dados);
-    memcpy(&res[4+tamanho_dados],&bcc2, 1);
-    res[5+tamanho_dados] =  FLAG;
-    
-    return 0;
-}
-int byte_stuffing_encode(char * trama, char * res, int size)
+int espera_dados()
 {
-       
-    int i, j=0; 
-    int count = 0;   
-   
-    for(i = 0; i < size; i++, j++)
-    {
-            if (trama[i]  == 0x7E)
-            {
-                    res[j] = 0x7D;
-                    j++; count++;
-                    res[j] = 0x5E;
-            }
-            else if(trama[i]  == 0x7D)
-            {
-                    res[j] = 0x7D;
-                    j++; count++;
-                    res[j] = 0x5D;
-            }
-            else{
-                   res[j] = trama[i];
-                    
-            }
-    }
-    return count;
-}
 
-int envia_e_espera_dados(char * dados, int s, int size)
-{
-    /*
-    //Preparar timeout
-    (void) signal(SIGALRM, timeout);
-    alarm(2);
-
-    //enviar
-    write(fd,Linkdata.frame_envio,temp_size+6);
-
-    //Ficar a espera da resposta
     unsigned char pak;
-
+    int i = 0;
     int state = 0;
-    while(STOP==FALSE)
-    {       
+
+    while (STOP==FALSE) 
+    {
         //printf("state: %d\n", state);
-        usleep(50);
-        read(fd,&pak,1);
+        usleep(5);
+        read(Linkdata.portfd,&pak,1);
         switch (state)
         {
         case 0: //Espera FLAG - F
-            if (pak == (char)res[0])
-            {
-                state++;
-            }
-            break;
+                if (pak == FLAG)
+                {   
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                    state++;
+                }
+                break;
         case 1: //Espera Edreço - A
-            if (pak == (char)res[1])
-                state++;
-            else if (pak == (char)res[0])
-                ;
-            else
-                state = 0;
-            break;
+                if (pak == AE)
+                {
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                    state++;
+                }       
+                else if (pak == FLAG)
+                    i = 1;
+                else
+                    state = 0;
+                break;
         case 2: // Espera Controlo - C
-            if (pak == (char)res[2])
-                state++;
-            else if (pak == (char)res[0])
-                state = 1;
-            else
-                state = 0;
-            break;
-        case 3: // Espera de BCC
-            if (pak == (char)res[3])
-                state++;
-            else if (pak == (char)res[0])
-                state = 1;
-            else
-                state = 0;
-            break;
-        case 4: // Espera Flag - F
-            if (pak == (char)res[4])
-            {
-                state = 0;
-                STOP = TRUE;
-                usleep(50);
-                STOP = FALSE;
-                return 0;  
-                    
-            }
-            else
-                state = 0;
-            break;
-        }
-    }   
+                if (pak == CDATA(Linkdata.ALTERNATING))
+                {
 
-    return -1;
-    */
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                    state++;
+                }
+                else if (pak == FLAG)
+                        state = 1;
+                else
+                {
+                    printf("1- %2x, 2- %2x \n", pak ,(AE ^ CDATA(0)));
+                    state = 0;
+                }    
+                break;
+        case 3: // Espera de BCC
+                if (pak == (AE ^ CDATA(Linkdata.ALTERNATING)) )
+                {
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                    state++;
+                }
+                else if (pak == FLAG)
+                    state = 1;
+                else
+                {
+                    state = 0;
+                }    
+                break;
+        case 4: // Espera Flag - F
+                if (pak == FLAG)
+                {
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                    STOP = TRUE;
+                }
+                else
+                {
+                    Linkdata.frame_resposta[i] = pak;
+                    i++;
+                }
+                break;
+        }
+    }
+
+    usleep(5);
+    STOP = FALSE;
+
+    return i;
 }
 
 
 /*
-int llread(int port_fd, char * message)
-{
+int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
+
     
-    return 0;
+
+
+    if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
+    {
+        total_number_packets = unpack_control(dados_destuffed, type, filename);
+        //printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
+    }   
+    else
+    {
+        if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
+           successo = -1; 
+    }
+
+    //Formular resposta
+    char trama_resposta[5];
+    int r;
+    if (successo == 0)
+    {
+        if (s == 0)  r = 1; else r = 0;
+        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, r);
+    } else
+    {
+        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, s);
+    }
+
+    //Enviar
+    write(fd,trama_resposta,5);
+    //if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+
+    return successo;
 }
 */
+
 /*
-int de_stuffing(char * trama,char * res, int size)
-{
-    int i, j=0;  
-    int count = 0;  
-   
-    for(i = 0; i < size; i++, j++)
-    {
-        if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
-        {
-                res[j] = 0x7E;
-                i++; count++;
-        }
-        else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
-        {
-                res[j] = 0x7D;
-                i++;count++;
-        }
-        else
-        {
-                res[j] = trama[i];
-        }
-    }
-   
-    return count;
-}
-int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
-	
-	if(dados[0]!= FLAG)
-        return -1;
-    if(dados[1]!= AE)
-        return -1;
-    if(dados[2]!= CDATA(controlo))
-        return -1;
-    if( dados[3] != (AE ^ CDATA(controlo)) )
-    	return -1;
-
-
-
-    int i = 0;
-
-    while (dados[4+i] != FLAG)
-    {
-        i++;
-        if (i > STUFFED_PACKET_MAXSIZE)  
-        {
-            printf("Erro no tamanho dos dados\n");
-            return -1;
-        }
-    }
-
-    memcpy(&res[0], &dados[4], i-1);
-    memcpy(&bcc2, &dados[4+i-1], 1);
-
-    if(dados[4+i]!= FLAG)
-        return -1;
-
-	return i-1;
-}
 int test_file_chunking(char * source_filename, char * dest_filename){
     char buf_ficheiro[BUFFLENGTH];
     char buf_resultado[BUFFLENGTH];
@@ -505,121 +452,201 @@ int test_file_chunking(char * source_filename, char * dest_filename){
 
     return 0;
 }
-int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
+*/
 
+
+
+int llwrite(int port_fd, char * message, int length)
+{
+    Linkdata.portfd = port_fd;
+
+    //preparar os dados
+    char stuffed_data[STUFFED_PACKET_MAXSIZE];
+    int temp_size = 
+        length + byte_stuffing_encode(message, stuffed_data, length);
+    char bcc = (AE^CDATA(Linkdata.ALTERNATING)); //completar bcc
+    temp_size = Fazer_trama(temp_size, stuffed_data, Linkdata.frame_envio, &bcc);
+
+    //Formular a resposta esperada
+    int r; if (Linkdata.ALTERNATING == 0)  r = 1; else r = 0;
+    fazer_trama_supervisao(Linkdata.frame_resposta, TYPE_RR, EMISSOR, r);
+
+    //Envio da trama e recepçao de respostas
+    envia_e_espera_dados(temp_size);
+
+    if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+
+    return 0;
+}
+int envia_e_espera_dados(int size)
+{
+    
+    //Preparar timeout
+    (void) signal(SIGALRM, timeout);
+    alarm(2);
+
+    //enviar
+    write(Linkdata.portfd,Linkdata.frame_envio,size);
+
+    //Ficar a espera da resposta
     unsigned char pak;
-    char incoming_frame[FRAME_MAXSIZE];
-    int i = 0;
-    int state = 0;
 
-    while (STOP==FALSE) 
-    {
+    int state = 0;
+    while(STOP==FALSE)
+    {       
         //printf("state: %d\n", state);
-        usleep(5);
-        read(fd,&pak,1);
+        usleep(50);
+        read(Linkdata.portfd,&pak,1);
         switch (state)
         {
         case 0: //Espera FLAG - F
-                if (pak == FLAG)
-                {   
-                    incoming_frame[i] = pak;
-                    i++;
-                    state++;
-                }
-                break;
+            if (pak == (char)Linkdata.frame_resposta[0])
+            {
+                state++;
+            }
+            break;
         case 1: //Espera Edreço - A
-                if (pak == AE)
-                {
-                    incoming_frame[i] = pak;
-                    i++;
-                    state++;
-                }       
-                else if (pak == FLAG)
-                    i = 1;
-                else
-                    state = 0;
-                break;
+            if (pak == (char)Linkdata.frame_resposta[1])
+                state++;
+            else if (pak == (char)Linkdata.frame_resposta[0])
+                ;
+            else
+                state = 0;
+            break;
         case 2: // Espera Controlo - C
-                if (pak == CDATA(s))
-                {
-                    incoming_frame[i] = pak;
-                    i++;
-                    state++;
-                }
-                else if (pak == FLAG)
-                        state = 1;
-                else
-                        state = 0;
-                break;
+            if (pak == (char)Linkdata.frame_resposta[2])
+                state++;
+            else if (pak == (char)Linkdata.frame_resposta[0])
+                state = 1;
+            else
+                state = 0;
+            break;
         case 3: // Espera de BCC
-                if (pak == (AE ^ CDATA(s)) )
-                {
-                    incoming_frame[i] = pak;
-                    i++;
-                    state++;
-                }
-                else if (pak == FLAG)
-                    state = 1;
-                else
-                    state = 0;
-                break;
+            if (pak == (char)Linkdata.frame_resposta[3])
+                state++;
+            else if (pak == (char)Linkdata.frame_resposta[0])
+                state = 1;
+            else
+                state = 0;
+            break;
         case 4: // Espera Flag - F
-                if (pak == FLAG)
-                {
-                    incoming_frame[i] = pak;
-                    i++;
-                    STOP = TRUE;
-                }
-                else
-                {
-                    incoming_frame[i] = pak;
-                    i++;
-                }
-                break;
+            if (pak == (char)Linkdata.frame_resposta[4])
+            {
+                state = 0;
+                STOP = TRUE;
+                usleep(50);
+                STOP = FALSE;
+                return 0;  
+                    
+            }
+            else
+                state = 0;
+            break;
+        }
+    }   
+
+    return -1;
+}
+
+int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2){
+
+    if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
+        return -1;  
+
+    res[0] = FLAG;
+    res[1] = AE;
+    res[2] = CDATA(Linkdata.ALTERNATING);
+    res[3] = (AE ^ CDATA(Linkdata.ALTERNATING));
+
+    memcpy(&res[4], &dados[0], tamanho_dados);
+    memcpy(&res[4+tamanho_dados],&bcc2, 1);
+    res[5+tamanho_dados] =  FLAG;
+    
+    return tamanho_dados+6;
+}
+int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
+    
+    if(dados[0]!= FLAG)
+        return -1;
+    if(dados[1]!= AE)
+        return -1;
+    if(dados[2]!= CDATA(controlo))
+        return -1;
+    if( dados[3] != (AE ^ CDATA(controlo)) )
+        return -1;
+
+
+
+    int i = 0;
+
+    while (dados[4+i] != FLAG)
+    {
+        i++;
+        if (i > STUFFED_PACKET_MAXSIZE)  
+        {
+            printf("Erro no tamanho dos dados\n");
+            return -1;
         }
     }
 
+    memcpy(&res[0], &dados[4], i-1);
+    memcpy(&bcc2, &dados[4+i-1], 1);
 
-    usleep(5);
-    STOP = FALSE;
+    if(dados[4+i]!= FLAG)
+        return -1;
 
-    int successo = 0;
-
-    //Tirar headers dos dados
-    char dados_deframed[STUFFED_PACKET_MAXSIZE];  
-    char bcc; //E preciso verificar
-    int temp_size = Desfazer_trama(incoming_frame, dados_deframed, s, &bcc);
-    char dados_destuffed[PACKETMAXSIZE];
-    de_stuffing(dados_deframed,dados_destuffed, temp_size);
-
-
-    if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
-    {
-        total_number_packets = unpack_control(dados_destuffed, type, filename);
-        //printf("N pacotes: %d, Nome Ficheiro: %s\n", total_number_packets, filename);
-    }   
-    else
-    {
-        if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
-           successo = -1; 
-    }
-
-    //Formular resposta
-    char trama_resposta[5];
-    int r;
-    if (successo == 0)
-    {
-        if (s == 0)  r = 1; else r = 0;
-        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, r);
-    } else
-    {
-        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, s);
-    }
-
-    //Enviar
-    write(fd,trama_resposta,5);
-
-    return successo;
+    return i-1;
 }
 
-*/
+int byte_stuffing_encode(char * trama, char * res, int size)
+{
+       
+    int i, j=0; 
+    int count = 0;   
+   
+    for(i = 0; i < size; i++, j++)
+    {
+            if (trama[i]  == 0x7E)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5E;
+            }
+            else if(trama[i]  == 0x7D)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5D;
+            }
+            else{
+                   res[j] = trama[i];
+                    
+            }
+    }
+    return count;
+}
+int de_stuffing(char * trama,char * res, int size)
+{
+    int i, j=0;  
+    int count = 0;  
+   
+    for(i = 0; i < size; i++, j++)
+    {
+        if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
+        {
+                res[j] = 0x7E;
+                i++; count++;
+        }
+        else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
+        {
+                res[j] = 0x7D;
+                i++;count++;
+        }
+        else
+        {
+                res[j] = trama[i];
+        }
+    }
+   
+    return count;
+}

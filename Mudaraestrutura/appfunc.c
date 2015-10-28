@@ -133,15 +133,27 @@ int Logic_Emissor()
 
 int Logic_Recetor()
 {
-    /*
-    //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
-    int ALTERNATING = 0;
-    int success = -1;
-    char received_data[DATAMAXSIZE];
-    while (success != 0)
-        success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
-    ALTERNATING = 1;
 
+    //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
+    int success = -1;
+    while (success != 0)
+    {
+
+        int size_read = llread(Appdata.fd_porta, Appdata.pack_received);
+        if ( size_read == -1)
+        {
+            printf("llread(): ERRO \n");    
+        }
+
+        //Verificaçoes
+        
+            //espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
+
+        success = 0;
+    }
+    
+
+    /*
     //dados
     int progresso_do_envio;
     for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
@@ -160,12 +172,11 @@ int Logic_Recetor()
     while (success != 0)
         success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0, received_data);
     if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-
-
-    return 0;
     */
 
     return 0;
+    
+
 }
 
 

@@ -17,6 +17,8 @@
 #define PAK_CMD_DATA	0
 #define PAK_CMD_LAST	2
 
+#define BAUDRATE B38400
+
 struct applicationLayer {
 	char filename[255];
 	FILE * fileDescriptor;
