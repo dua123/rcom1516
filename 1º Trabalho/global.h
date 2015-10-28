@@ -70,7 +70,6 @@ extern int total_number_packets;
 
 extern volatile int STOP;
 extern char Alarm_buffer[FRAME_MAXSIZE];
-extern char  BCC_2;
 
 
 
