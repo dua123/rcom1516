@@ -1,14 +1,8 @@
-#include "linkfunc.c"
+#include "linkfunc.h"
 
 
-//int fd;
-//char filename[48];
-//struct termios oldtio,newtio;
-//volatile int STOP=FALSE; // flag dos alarmes llopen
-//char Alarm_buffer[FRAME_MAXSIZE];
-//int total_number_packets;
-
-
+volatile int STOP=FALSE;
+char Alarm_buffer[FRAME_MAXSIZE];
 
 int llopen(int app)
 {
@@ -73,10 +67,10 @@ int llclose(int app)
         }
         
     }
-    finalize();
 
     return final;   
 }
+
 int llwrite(int app, char * buffer, int length)
 {
 
@@ -165,210 +159,7 @@ int llread(int app)
     else
        return -1;
 }
-int byte_stuffing_encode(char * trama, char * res, int size)
-{
-       
-    int i, j=0; 
-    int count = 0;   
-   
-    for(i = 0; i < size; i++, j++)
-    {
-            if (trama[i]  == 0x7E)
-            {
-                    res[j] = 0x7D;
-                    j++; count++;
-                    res[j] = 0x5E;
-            }
-            else if(trama[i]  == 0x7D)
-            {
-                    res[j] = 0x7D;
-                    j++; count++;
-                    res[j] = 0x5D;
-            }
-            else{
-                   res[j] = trama[i];
-                    
-            }
-    }
-    return count;
-}
-int de_stuffing(char * trama,char * res, int size)
-{
-    int i, j=0;  
-    int count = 0;  
-   
-    for(i = 0; i < size; i++, j++)
-    {
-        if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
-        {
-                res[j] = 0x7E;
-                i++; count++;
-        }
-        else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
-        {
-                res[j] = 0x7D;
-                i++;count++;
-        }
-        else
-        {
-                res[j] = trama[i];
-        }
-    }
-   
-    return count;
-}
-int packup_data(char * res, int n_seq, char * data, int data_size)
-{
-    if(data_size > 256 )
-    {
-        printf("packup_data(): Data read after stuffing was larger than maximum 512 byte\n");
-        return -1;
-    }
 
-    int L1 = data_size % 256;
-    int L2 = data_size / 256;
-
-    int i = 0;
-    for(i=0; i < 4; i++){
-        switch (i)
-        {   
-        case 0:         //C
-            res[i] = 0;
-            break;
-        case 1:         //N
-            res[i] = n_seq;
-            break;
-        case 2:         //L1
-            res[i] = L2;
-            break;
-        case 3:         //L2
-            res[i] = L1;
-            break;
-        }
-    }
-
-    memcpy(&res[4], &data[0], data_size);
-    return data_size+4;
-}
-int packup_control(char * res, int command, unsigned int pack_amount, char * file_name)
-{
-    if (! (command == 1 || command == 2) )
-    {
-        printf("packup_control(): Invalid Command number, try 1 or 2\n");
-        return -1;
-    }
-    res[0] = command;
-    
-
-    res[1] = 0; //T1 File size
-    res[2] = 2; //T1 Amount of V1 octets
-    res[3] = pack_amount / 256;
-    res[4] = pack_amount % 256; //V1
-
-    res[5] = 1; //T2 File size
-    res[6] = strlen(file_name);
-
-    memcpy(&res[7], file_name, strlen(file_name));
-
-    res[7 +  strlen(file_name) ] = 0x00;
-    res[8 +  strlen(file_name) ] = 0x00;
-
-
-    return (7 + strlen(file_name));
-}
-int unpack_data(char * res, uint8_t n_seq, char * data)
-{
-
-    if(data[0] != 0x00)
-    {
-        printf("unpack_data(): This wasn't a Data Packet\n");
-        return -1;
-    }
-    if(data[1] != n_seq)
-    {
-        printf("unpack_data(): Wrong sequence number\n");
-        return -1;
-    }
-
-    int read_size = 256 * data[2]  + data[3];
-
-    memcpy(&res[0], &data[4], read_size);
-
-    return 0;
-}
-int unpack_control(char * pak, int command, char * file_name)
-{
-
-    if (command != pak[0] )
-    {
-        printf("unpack_control(): Wrong expected C value\n");
-        return -1;
-    }
-
-    int pack_amount = 256 * (uint8_t) pak[3] + (uint8_t) pak[4];
-
-    int str_length = (uint8_t) pak[6];
-
-    memcpy(file_name, &pak[7], str_length);
-
-
-    if (strlen(file_name) != str_length)
-    {
-        printf("unpack_control(): String and its length don't match\n");
-        return -1;
-    }
-
-    return pack_amount;
-}
-int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
-
-	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
-		return -1;	
-
-	res[0] = FLAG;
-	res[1] = AE;
-	res[2] = CDATA(controlo);
-	res[3] = (AE ^ CDATA(controlo));
-
-    memcpy(&res[4], &dados[0], tamanho_dados);
-    memcpy(&res[4+tamanho_dados],&bcc2, 1);
-	res[5+tamanho_dados] =  FLAG;
-	
-	return 0;
-}
-int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
-	
-	if(dados[0]!= FLAG)
-        return -1;
-    if(dados[1]!= AE)
-        return -1;
-    if(dados[2]!= CDATA(controlo))
-        return -1;
-    if( dados[3] != (AE ^ CDATA(controlo)) )
-    	return -1;
-
-
-
-    int i = 0;
-
-    while (dados[4+i] != FLAG)
-    {
-        i++;
-        if (i > STUFFED_PACKET_MAXSIZE)  
-        {
-            printf("Erro no tamanho dos dados\n");
-            return -1;
-        }
-    }
-
-    memcpy(&res[0], &dados[4], i-1);
-    memcpy(&bcc2, &dados[4+i-1], 1);
-
-    if(dados[4+i]!= FLAG)
-        return -1;
-
-	return i-1;
-}
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num)
 {
 	res[0] = FLAG;
@@ -427,46 +218,6 @@ int fazer_trama_resposta(char * res, char * msg)
     res[4] = msg[4];
 
     return 0;
-}
-int test_file_chunking(char * source_filename, char * dest_filename){
-    char buf_ficheiro[BUFFLENGTH];
-    char buf_resultado[BUFFLENGTH];
-    long file_size = file_to_buffer(buf_ficheiro, source_filename);
-    if (file_size == -1)
-    {
-      perror("file_to_buffer()");
-    exit(-1);
-    }
-
-    int progress = 0;
-    char chunk[256];
-    while (progress < file_size)
-    {
-        progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
-       
-        if ( buffer_to_file(chunk, dest_filename, 256) == -1) {
-        perror("buffer_to_file()");
-        exit(-1);
-        }
-
-        printf("progress: %d", progress);
-
-    }
-    file_to_buffer(buf_resultado, dest_filename);
-
-    if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
-                printf("SUCESSO");
-
-    return 0;
-}
-void timeout()                   // atende alarme
-{
-	if (STOP == FALSE)
-	{
-		printf("Ocorreu time out\n");
-		write(fd,Alarm_buffer,5);
-		alarm(1);
-	}
 }
 int espera_e_responde_superv(char * msg, char * res)
 {
@@ -595,6 +346,159 @@ int envia_e_espera_superv(char * msg, char * res)
 	
 	return -1;
 }
+
+
+
+
+void timeout()
+{
+	if (STOP == FALSE)
+	{
+		printf("Ocorreu time out\n");
+		write(fd,Alarm_buffer,5);
+		alarm(1);
+	}
+}
+
+
+
+
+int byte_stuffing_encode(char * trama, char * res, int size)
+{
+       
+    int i, j=0; 
+    int count = 0;   
+   
+    for(i = 0; i < size; i++, j++)
+    {
+            if (trama[i]  == 0x7E)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5E;
+            }
+            else if(trama[i]  == 0x7D)
+            {
+                    res[j] = 0x7D;
+                    j++; count++;
+                    res[j] = 0x5D;
+            }
+            else{
+                   res[j] = trama[i];
+                    
+            }
+    }
+    return count;
+}
+int de_stuffing(char * trama,char * res, int size)
+{
+    int i, j=0;  
+    int count = 0;  
+   
+    for(i = 0; i < size; i++, j++)
+    {
+        if (trama[i]  == 0x7D && trama[i+1] == 0x5E)
+        {
+                res[j] = 0x7E;
+                i++; count++;
+        }
+        else if(trama[i]  == 0x7D && trama[i+1] == 0x5D)
+        {
+                res[j] = 0x7D;
+                i++;count++;
+        }
+        else
+        {
+                res[j] = trama[i];
+        }
+    }
+   
+    return count;
+}
+
+
+int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
+
+	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
+		return -1;	
+
+	res[0] = FLAG;
+	res[1] = AE;
+	res[2] = CDATA(controlo);
+	res[3] = (AE ^ CDATA(controlo));
+
+    memcpy(&res[4], &dados[0], tamanho_dados);
+    memcpy(&res[4+tamanho_dados],&bcc2, 1);
+	res[5+tamanho_dados] =  FLAG;
+	
+	return 0;
+}
+int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
+	
+	if(dados[0]!= FLAG)
+        return -1;
+    if(dados[1]!= AE)
+        return -1;
+    if(dados[2]!= CDATA(controlo))
+        return -1;
+    if( dados[3] != (AE ^ CDATA(controlo)) )
+    	return -1;
+
+
+
+    int i = 0;
+
+    while (dados[4+i] != FLAG)
+    {
+        i++;
+        if (i > STUFFED_PACKET_MAXSIZE)  
+        {
+            printf("Erro no tamanho dos dados\n");
+            return -1;
+        }
+    }
+
+    memcpy(&res[0], &dados[4], i-1);
+    memcpy(&bcc2, &dados[4+i-1], 1);
+
+    if(dados[4+i]!= FLAG)
+        return -1;
+
+	return i-1;
+}
+
+int test_file_chunking(char * source_filename, char * dest_filename){
+    char buf_ficheiro[BUFFLENGTH];
+    char buf_resultado[BUFFLENGTH];
+    long file_size = file_to_buffer(buf_ficheiro, source_filename);
+    if (file_size == -1)
+    {
+      perror("file_to_buffer()");
+    exit(-1);
+    }
+
+    int progress = 0;
+    char chunk[256];
+    while (progress < file_size)
+    {
+        progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
+       
+        if ( buffer_to_file(chunk, dest_filename, 256) == -1) {
+        perror("buffer_to_file()");
+        exit(-1);
+        }
+
+        printf("progress: %d", progress);
+
+    }
+    file_to_buffer(buf_resultado, dest_filename);
+
+    if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
+                printf("SUCESSO");
+
+    return 0;
+}
+
 int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     unsigned char pak;

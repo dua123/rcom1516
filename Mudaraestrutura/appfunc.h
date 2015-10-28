@@ -4,7 +4,8 @@
 
 #include "global.h"
 
-//App Layer
+
+int proccess_arguments(int argc, char** argv);
 void init(int argc, char** argv);
 void finalize();
 
@@ -18,5 +19,6 @@ int packup_control(char * res, int command, unsigned int pack_amount, char * fil
 int unpack_control(char * pak, int command, char * file_name);
 int packup_data(char * res, int n_seq, char * data, int data_size);
 int unpack_data(char * res, uint8_t n_seq, char * data);
+
 
 #endif

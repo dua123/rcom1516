@@ -1,15 +1,61 @@
 #include "appfunc.h"
 
 
-int fd;
+
+int user;
 char filename[48];
+int fd;
 struct termios oldtio,newtio;
-volatile int STOP=FALSE; // flag dos alarmes llopen
-char Alarm_buffer[FRAME_MAXSIZE];
 int total_number_packets;
 
 
+ 
+int proccess_arguments(int argc, char** argv)
+{
 
+    if (    (argc < 3) ||
+        ((strcmp("/dev/ttyS0", argv[1])!=0) &&
+        (strcmp("/dev/ttyS1", argv[1])!=0) &&
+        (strcmp("/dev/ttyS2", argv[1])!=0) &&
+        (strcmp("/dev/ttyS3", argv[1])!=0) &&
+        (strcmp("/dev/ttyS4", argv[1])!=0) )
+        ) 
+    {
+        printf("Usage:\tnserial SerialPort\n\tex: ./app /dev/ttyS4 user\n");
+        exit(1);
+    }
+
+    if ( strcmp(argv[2], "emissor") == 0 )
+        user = EMISSOR;
+    else if ( strcmp(argv[2], "recetor") == 0 )
+        user = RECETOR;
+    else
+    {
+        printf("O terceiro argumento deve ser 'emissor' OU 'recetor'\n");
+        return -1;
+    }
+
+
+    if(user == EMISSOR)
+    {
+        if (argc != 4)
+        {
+            printf("E necessario um quarto argumento para o emissor:\n\t./app /dev/ttyS4 emissor filename\n");
+            exit(1);
+        }
+        strcpy(filename,argv[3]);
+        FILE * image_fd = fopen(argv[3], "r");
+        if (image_fd == NULL)
+        {
+            printf("File doesn't exist!\n");
+            return -1;
+        }
+        fclose(image_fd);
+    }
+    printf("User: %d\n", user);
+
+    return 0;
+}
 void init(int argc, char** argv){ 
     fd = open(argv[1], O_RDWR | O_NOCTTY );
     if (fd <0) 
@@ -49,13 +95,16 @@ void init(int argc, char** argv){
     printf("New termios structure set\n");
 }
 void finalize(){
-    sleep(2);
+    usleep(50);
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
     }
     close(fd);
 }
+
+
+
 long file_byte_size(char * name)
 {
     FILE * fp = fopen(name, "r");
@@ -221,5 +270,4 @@ int unpack_control(char * pak, int command, char * file_name)
     }
 
     return pack_amount;
-
-
+}
