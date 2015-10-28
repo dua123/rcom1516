@@ -14,13 +14,22 @@ int main(int argc, char** argv)
         printf("llopen(): Falhou\n");
     else
         printf("llopen(): SUCESSO\n");
- 
-    /*
-    if (llread( Appdata.user) == 1)
-        printf("llread(): Falhou \n");
-    else        
-        printf("llread(): SUCESSO \n"); 
-    */
+    
+
+    if (Appdata.user == EMISSOR)
+    {
+        if (Logic_Emissor() == -1)
+            printf("Emissor(): Falhou \n");
+        else        
+            printf("Emissor(): SUCESSO \n"); 
+    }
+    else
+    {
+        if (Logic_Recetor() == -1)
+            printf("Recetor(): Falhou \n");
+        else        
+            printf("Recetor(): SUCESSO \n");
+    }
 
     if (llclose( Appdata.porta ) == 1)
 		printf("llclose():Falhou \n");

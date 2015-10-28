@@ -52,8 +52,8 @@ struct linkLayer{
 
 
 int llopen(int port, int user);
-//int llwrite(char * buffer, int length);
-//int llread();
+//int llwrite(int port_fd, char * message);
+//int llread(int port_fd, char * message, int length);
 int llclose(int port_fd);
 
 

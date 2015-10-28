@@ -273,93 +273,17 @@ int llclose(int port_fd)
 }
 
 /*
-int llwrite(char * buffer, int length)
+//int llwrite(int port_fd, char * message)
 {
-
+    
     return 0;
 }
-int llread()
+//int llread(int port_fd, char * message, int length)
 {
-    if(user == EMISSOR)
-    {
-
-        //VER A QUANTIDADE DE TRAMAS DE DADOS A ENVIAR
-        int total_file_size = file_byte_size(filename);
-        int total_number_packets;
-        printf("bytes: %d, ", total_file_size);
-        if ((total_file_size % 256) > 0)
-            total_number_packets = (total_file_size / 256) + 1;
-        else
-            total_number_packets = (total_file_size / 256);
-        printf("chunks: %d\n", total_number_packets);
-
-
-        //MONTAR O COMANDO INCIAL
-        char pack_command[PACKETMAXSIZE]; int ALTERNATING = 0;
-        int temp_size = packup_control(pack_command, PAK_CMD_FIRST, total_number_packets, filename);
-
-        //ENVIAR A TRAMA DE INFORMACAO INICIAL
-        envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
-        ALTERNATING = 1;
-
-        //DADOS
-        int progresso_do_envio;
-        for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
-        {
-            //Encontrar o proximo chunk
-            char next_chunk[DATAMAXSIZE];
-            get_chunk(next_chunk, filename, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE, total_file_size);
-            char data_packet[PACKETMAXSIZE];
-            temp_size = packup_data(data_packet, progresso_do_envio, next_chunk, DATAMAXSIZE);
-            
-            envia_e_espera_dados(data_packet, ALTERNATING, temp_size);
-            if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-        }
-
-
-
-        //MONTAR O COMANDO FINAL
-        temp_size = packup_control(pack_command, PAK_CMD_LAST, total_number_packets, filename);
-        envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
-        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-        return 0;
-    }   
-    else if(user == RECETOR)
-    {
-
-        //ESPERA PELA INFORMAÇAO DE NUMERO DE CHUNKS E DO NOME DO FICHEIRO
-        int ALTERNATING = 0;
-        int success = -1;
-        char received_data[DATAMAXSIZE];
-        while (success != 0)
-            success = espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
-        ALTERNATING = 1;
-
-        //dados
-        int progresso_do_envio;
-        for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
-        {
-            printf("|"); fflush(stdout);
-            success = -1;
-            while (success != 0)
-                success = espera_e_responde_dados(PAK_CMD_DATA, ALTERNATING, progresso_do_envio, received_data);
-            if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-
-            buffer_to_file(received_data, filename, DATAMAXSIZE);
-        }
-
-        //ESPERA PELO COMANDO final
-        success = -1;
-        while (success != 0)
-            success = espera_e_responde_dados(PAK_CMD_LAST, ALTERNATING, 0, received_data);
-        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
-
-
-        return 0;
-    }
-    else
-       return -1;
+    
+    return 0;
 }
+
 */
 
 /*
