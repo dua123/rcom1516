@@ -48,12 +48,14 @@ struct linkLayer{
 
 	int portfd;
 	int user;
+
+	int ALTERNATING;
 };
 
 
 int llopen(int port, int user);
-//int llwrite(int port_fd, char * message);
-//int llread(int port_fd, char * message, int length);
+int llwrite(int port_fd, char * message, int length);
+int llread(int port_fd, char * message);
 int llclose(int port_fd);
 
 
@@ -64,14 +66,14 @@ int envia_e_espera_superv(int port, char * msg, char * res);
 
 void timeout();
 
-//int byte_stuffing_encode(char * trama, char * res, int size);
-//int de_stuffing(char * trama,char * res, int size);
+int byte_stuffing_encode(char * trama, char * res, int size);
+int de_stuffing(char * trama,char * res, int size);
 
-//int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2);
-//int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
+int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2);
+int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
 
-//int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos);
-//int envia_e_espera_dados(char * dados, int size, int s);
+int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos);
+int envia_e_espera_dados(char * dados, int size, int s);
 
 
 #endif

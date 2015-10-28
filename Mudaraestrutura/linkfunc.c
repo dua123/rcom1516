@@ -11,6 +11,7 @@ int llopen(int port, int user){
     //Mudar isto depois
     Linkdata.user = user;
     Linkdata.portfd = port;
+    Linkdata.ALTERNATING = 0;
 
     //Construir Trama SET e UA
     if(fazer_trama_supervisao(Linkdata.frame_envio, TYPE_SET, EMISSOR, 0) == -1)
@@ -31,7 +32,47 @@ int llopen(int port, int user){
 
     return -1;
 }
+int llclose(int port_fd)
+{
 
+    //Construir Trama SET
+    if(fazer_trama_supervisao(Linkdata.frame_envio, TYPE_DISC, EMISSOR, 0) == -1)
+        return -1;
+    if (fazer_trama_resposta(Linkdata.frame_resposta, Linkdata.frame_envio) == -1)
+        return -1;
+
+    
+    int final = 0;
+    if(Linkdata.user == EMISSOR)
+    {
+        final = envia_e_espera_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
+        if (final != -1)
+        {
+            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
+            write(port_fd,Linkdata.frame_envio,5);
+        }
+        return final;
+    }
+    else if(Linkdata.user == RECETOR)
+    {
+        final = espera_e_responde_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
+        if (final != -1)
+        {
+            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
+            int i; final = 0; char pak;
+            for (i = 0; i < 5; i++)
+            {   
+                read(port_fd,&pak,1);
+                if (pak != (char)Linkdata.frame_envio[i])
+                    final = -1;
+            }
+        }
+        
+    }
+    
+
+    return -1;   
+}
 
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num){
     res[0] = FLAG;
@@ -229,64 +270,44 @@ void timeout()
     }
 }
 
-
-int llclose(int port_fd)
+int llwrite(int port_fd, char * message, int length)
 {
+    //preparar os dados
+    char stuffed_data[STUFFED_PACKET_MAXSIZE];
+    int temp_size = 
+        length + byte_stuffing_encode(message, stuffed_data, length);
+    char bcc = (AE^CDATA(Linkdata.ALTERNATING)); //completar bcc
+    Fazer_trama(temp_size, stuffed_data, Linkdata.ALTERNATING, Linkdata.frame_envio, &bcc);
 
-    //Construir Trama SET
-    if(fazer_trama_supervisao(Linkdata.frame_envio, TYPE_DISC, EMISSOR, 0) == -1)
-        return -1;
-    if (fazer_trama_resposta(Linkdata.frame_resposta, Linkdata.frame_envio) == -1)
-        return -1;
+    //Formular a resposta esperada
+    int r; if (Linkdata.ALTERNATING == 0)  r = 1; else r = 0;
+    fazer_trama_supervisao(Linkdata.frame_resposta, TYPE_RR, EMISSOR, r);
 
-    
-    int final = 0;
-    if(Linkdata.user == EMISSOR)
-    {
-        final = envia_e_espera_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
-        if (final != -1)
-        {
-            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
-            write(port_fd,Linkdata.frame_envio,5);
-        }
-        return final;
-    }
-    else if(Linkdata.user == RECETOR)
-    {
-        final = espera_e_responde_superv(port_fd, Linkdata.frame_envio, Linkdata.frame_resposta);
-        if (final != -1)
-        {
-            fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
-            int i; final = 0; char pak;
-            for (i = 0; i < 5; i++)
-            {   
-                read(port_fd,&pak,1);
-                if (pak != (char)Linkdata.frame_envio[i])
-                    final = -1;
-            }
-        }
-        
-    }
-    
 
-    return -1;   
-}
+    //Envio da trama e recepçao de respostas
+    //envia_e_espera_dados();
 
-/*
-//int llwrite(int port_fd, char * message)
-{
-    
-    return 0;
-}
-//int llread(int port_fd, char * message, int length)
-{
-    
+    if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+
     return 0;
 }
 
-*/
+int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
 
-/*
+    if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
+        return -1;  
+
+    res[0] = FLAG;
+    res[1] = AE;
+    res[2] = CDATA(controlo);
+    res[3] = (AE ^ CDATA(controlo));
+
+    memcpy(&res[4], &dados[0], tamanho_dados);
+    memcpy(&res[4+tamanho_dados],&bcc2, 1);
+    res[5+tamanho_dados] =  FLAG;
+    
+    return 0;
+}
 int byte_stuffing_encode(char * trama, char * res, int size)
 {
        
@@ -314,6 +335,87 @@ int byte_stuffing_encode(char * trama, char * res, int size)
     }
     return count;
 }
+
+int envia_e_espera_dados(char * dados, int s, int size)
+{
+    /*
+    //Preparar timeout
+    (void) signal(SIGALRM, timeout);
+    alarm(2);
+
+    //enviar
+    write(fd,Linkdata.frame_envio,temp_size+6);
+
+    //Ficar a espera da resposta
+    unsigned char pak;
+
+    int state = 0;
+    while(STOP==FALSE)
+    {       
+        //printf("state: %d\n", state);
+        usleep(50);
+        read(fd,&pak,1);
+        switch (state)
+        {
+        case 0: //Espera FLAG - F
+            if (pak == (char)res[0])
+            {
+                state++;
+            }
+            break;
+        case 1: //Espera Edreço - A
+            if (pak == (char)res[1])
+                state++;
+            else if (pak == (char)res[0])
+                ;
+            else
+                state = 0;
+            break;
+        case 2: // Espera Controlo - C
+            if (pak == (char)res[2])
+                state++;
+            else if (pak == (char)res[0])
+                state = 1;
+            else
+                state = 0;
+            break;
+        case 3: // Espera de BCC
+            if (pak == (char)res[3])
+                state++;
+            else if (pak == (char)res[0])
+                state = 1;
+            else
+                state = 0;
+            break;
+        case 4: // Espera Flag - F
+            if (pak == (char)res[4])
+            {
+                state = 0;
+                STOP = TRUE;
+                usleep(50);
+                STOP = FALSE;
+                return 0;  
+                    
+            }
+            else
+                state = 0;
+            break;
+        }
+    }   
+
+    return -1;
+    */
+}
+
+
+/*
+int llread(int port_fd, char * message)
+{
+    
+    return 0;
+}
+*/
+/*
 int de_stuffing(char * trama,char * res, int size)
 {
     int i, j=0;  
@@ -338,24 +440,6 @@ int de_stuffing(char * trama,char * res, int size)
     }
    
     return count;
-}
-
-
-int Fazer_trama(int tamanho_dados, char * dados, int controlo, char * res, char * bcc2){
-
-	if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
-		return -1;	
-
-	res[0] = FLAG;
-	res[1] = AE;
-	res[2] = CDATA(controlo);
-	res[3] = (AE ^ CDATA(controlo));
-
-    memcpy(&res[4], &dados[0], tamanho_dados);
-    memcpy(&res[4+tamanho_dados],&bcc2, 1);
-	res[5+tamanho_dados] =  FLAG;
-	
-	return 0;
 }
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 	
@@ -390,7 +474,6 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 
 	return i-1;
 }
-
 int test_file_chunking(char * source_filename, char * dest_filename){
     char buf_ficheiro[BUFFLENGTH];
     char buf_resultado[BUFFLENGTH];
@@ -422,7 +505,6 @@ int test_file_chunking(char * source_filename, char * dest_filename){
 
     return 0;
 }
-
 int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
 
     unsigned char pak;
@@ -538,85 +620,6 @@ int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
     write(fd,trama_resposta,5);
 
     return successo;
-}
-int envia_e_espera_dados(char * dados, int s, int size)
-{
-    //preparar os dados
-    char stuffed_data[STUFFED_PACKET_MAXSIZE];
-    int temp_size = size + byte_stuffing_encode(dados, stuffed_data, size);
-    char framed_data[FRAME_MAXSIZE]; 
-    char bcc = (AE^CDATA(s)); //completar bcc
-    Fazer_trama(temp_size, stuffed_data, s, framed_data, &bcc);
-
-    //Formular a resposta esperada
-    char res[5]; int r; if (s == 0)  r = 1; else r = 0;
-    fazer_trama_supervisao(res, TYPE_RR, EMISSOR, r);
-
-    //Preparar timeout
-    (void) signal(SIGALRM, timeout);
-    alarm(2);
-
-    //enviar
-    write(fd,Linkdata.frame_envio,temp_size+6);
-
-    //Ficar a espera da resposta
-    unsigned char pak;
-
-    int state = 0;
-    while(STOP==FALSE)
-    {       
-        //printf("state: %d\n", state);
-        usleep(50);
-        read(fd,&pak,1);
-        switch (state)
-        {
-        case 0: //Espera FLAG - F
-            if (pak == (char)res[0])
-            {
-                state++;
-            }
-            break;
-        case 1: //Espera Edreço - A
-            if (pak == (char)res[1])
-                state++;
-            else if (pak == (char)res[0])
-                ;
-            else
-                state = 0;
-            break;
-        case 2: // Espera Controlo - C
-            if (pak == (char)res[2])
-                state++;
-            else if (pak == (char)res[0])
-                state = 1;
-            else
-                state = 0;
-            break;
-        case 3: // Espera de BCC
-            if (pak == (char)res[3])
-                state++;
-            else if (pak == (char)res[0])
-                state = 1;
-            else
-                state = 0;
-            break;
-        case 4: // Espera Flag - F
-            if (pak == (char)res[4])
-            {
-                state = 0;
-                STOP = TRUE;
-                usleep(50);
-                STOP = FALSE;
-                return 0;  
-                    
-            }
-            else
-                state = 0;
-            break;
-        }
-    }   
-    
-    return -1;
 }
 
 */

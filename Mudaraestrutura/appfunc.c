@@ -95,16 +95,16 @@ int Logic_Emissor()
         Appdata.total_number_packets = (total_file_size / 256);
     printf("chunks: %d\n", Appdata.total_number_packets);
 
+    //MONTAR O COMANDO INCIAL
+    int temp_size = packup_control(Appdata.pack_sent, PAK_CMD_FIRST);
+
+
+    
+    //ENVIAR A TRAMA DE INFORMACAO INICIAL
+    //envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
+    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
 
     /*
-    //MONTAR O COMANDO INCIAL
-    char pack_command[PACKETMAXSIZE]; int ALTERNATING = 0;
-    int temp_size = packup_control(pack_command, PAK_CMD_FIRST, total_number_packets, filename);
-
-    //ENVIAR A TRAMA DE INFORMACAO INICIAL
-    envia_e_espera_dados(pack_command, ALTERNATING, temp_size);
-    ALTERNATING = 1;
-
     //DADOS
     int progresso_do_envio;
     for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
@@ -266,7 +266,8 @@ int packup_data(char * res, int n_seq, char * data, int data_size)
     memcpy(&res[4], &data[0], data_size);
     return data_size+4;
 }
-int packup_control(char * res, int command, unsigned int pack_amount, char * file_name)
+*/
+int packup_control(char * res, int command)
 {
     if (! (command == 1 || command == 2) )
     {
@@ -278,20 +279,21 @@ int packup_control(char * res, int command, unsigned int pack_amount, char * fil
 
     res[1] = 0; //T1 File size
     res[2] = 2; //T1 Amount of V1 octets
-    res[3] = pack_amount / 256;
-    res[4] = pack_amount % 256; //V1
+    res[3] = Appdata.total_number_packets / 256;
+    res[4] = Appdata.total_number_packets % 256; //V1
 
     res[5] = 1; //T2 File size
-    res[6] = strlen(file_name);
+    res[6] = strlen(Appdata.filename);
 
-    memcpy(&res[7], file_name, strlen(file_name));
+    memcpy(&res[7], Appdata.filename, strlen(Appdata.filename));
 
-    res[7 +  strlen(file_name) ] = 0x00;
-    res[8 +  strlen(file_name) ] = 0x00;
+    res[7 +  strlen(Appdata.filename) ] = 0x00;
+    res[8 +  strlen(Appdata.filename) ] = 0x00;
 
 
-    return (7 + strlen(file_name));
+    return (7 + strlen(Appdata.filename));
 }
+/*
 int unpack_data(char * res, uint8_t n_seq, char * data)
 {
 

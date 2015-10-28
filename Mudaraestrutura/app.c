@@ -31,7 +31,7 @@ int main(int argc, char** argv)
             printf("Recetor(): SUCESSO \n");
     }
 
-    if (llclose( Appdata.porta ) == 1)
+    if (llclose( Appdata.fd_porta ) == 1)
 		printf("llclose():Falhou \n");
 	else		
 		printf("llclose(): SUCESSO \n"); 
