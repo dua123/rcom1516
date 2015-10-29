@@ -7,7 +7,6 @@ int main(int argc, char** argv)
 
 	if (proccess_arguments(argc, argv) != 0)
         return -1;
-    init(argc, argv);
 
     Appdata.fd_porta = llopen( Appdata.porta, Appdata.user );
     if( Appdata.fd_porta == 1)
@@ -31,16 +30,15 @@ int main(int argc, char** argv)
             printf("Recetor(): SUCESSO \n");
     }
 
-    if (llclose( Appdata.fd_porta ) == 1)
+    if (llclose( Appdata.fd_porta ) == -1)
 		printf("llclose():Falhou \n");
 	else		
 		printf("llclose(): SUCESSO \n"); 
     
     
-    
+    if (Appdata.user == EMISSOR)   
+        fclose(Appdata.fileDescriptor);
 
-
-    finalize();
 	return 0;
 }
 

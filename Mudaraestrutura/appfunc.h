@@ -4,12 +4,6 @@
 
 #include "linkfunc.h"
 
-#define FALSE 0
-#define TRUE 1
-
-#define EMISSOR 0
-#define RECETOR 1
-
 #define PAK_CMD_FIRST	1
 #define PAK_CMD_DATA	0
 #define PAK_CMD_LAST	2
@@ -29,12 +23,8 @@ struct applicationLayer {
 	char pack_received[PACKETMAXSIZE];
 } Appdata;
 
-struct termios oldtio,newtio;
-
 
 int proccess_arguments(int argc, char** argv);
-void init(int argc, char** argv);
-void finalize();
 
 int Logic_Emissor();
 int Logic_Recetor();

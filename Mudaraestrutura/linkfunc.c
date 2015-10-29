@@ -8,10 +8,9 @@ char BCC2 = 0;
 
 
 int llopen(int port, int user){
-
     //Mudar isto depois
     Linkdata.user = user;
-    Linkdata.portfd = port;
+    Linkdata.portfd = initialize(port);
     Linkdata.ALTERNATING = 0;
 
     //Construir Trama SET e UA
@@ -20,19 +19,55 @@ int llopen(int port, int user){
     if (fazer_trama_resposta(Linkdata.frame_resposta, Linkdata.frame_envio) == -1)
         return -1;
 
+
     if (user == EMISSOR)
     {
-        if (envia_e_espera_superv(port, Linkdata.frame_envio, Linkdata.frame_resposta) != -1)
+        if (envia_e_espera_superv(Linkdata.portfd , Linkdata.frame_envio, Linkdata.frame_resposta) != -1)
         return Linkdata.portfd;
     } 
     else if(user == RECETOR)
     {
-        if (espera_e_responde_superv(port, Linkdata.frame_envio, Linkdata.frame_resposta) != -1)
+        if (espera_e_responde_superv(Linkdata.portfd , Linkdata.frame_envio, Linkdata.frame_resposta) != -1)
         return Linkdata.portfd;
     }
-
-    return -1;
+    return Linkdata.portfd;
 }
+int initialize(int port)
+{
+    int fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY );
+    if (fd <0) 
+    {
+        perror("/dev/ttyS0"); exit(-1); 
+    }
+ 
+    if ( tcgetattr(fd,&oldtio) == -1)
+    { 
+      perror("tcgetattr");
+      exit(-1);
+    }
+
+
+    bzero(&newtio, sizeof(newtio));
+    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+    newtio.c_lflag = 0;
+    newtio.c_cc[VTIME]    = 0; 
+    newtio.c_cc[VMIN]     = 1; 
+
+
+    tcflush(fd, TCIOFLUSH);
+ 
+    if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+      perror("tcsetattr");
+      exit(-1);
+    }
+
+    printf("New termios structure set\n");
+
+    return fd;
+}
+
 int llclose(int port_fd){
 
     //Construir Trama SET
@@ -51,6 +86,7 @@ int llclose(int port_fd){
             fazer_trama_supervisao(Linkdata.frame_envio, TYPE_UA, EMISSOR, 0);
             write(port_fd,Linkdata.frame_envio,5);
         }
+        finalize(port_fd);
         return final;
     }
     else if(Linkdata.user == RECETOR)
@@ -67,7 +103,8 @@ int llclose(int port_fd){
                     final = -1;
             }
         }
-        
+        finalize(port_fd);
+        return final;
     }
     
 
@@ -255,7 +292,14 @@ int envia_e_espera_superv(int port, char * msg, char * res){
     
     return -1;
 }
-
+void finalize(int port_fd){
+    usleep(50);
+    if ( tcsetattr(port_fd,TCSANOW,&oldtio) == -1) {
+        perror("tcsetattr");
+        exit(-1);
+    }
+    close(port_fd);
+}
 
 int llread(int port_fd, char * message){
     Linkdata.portfd = port_fd;

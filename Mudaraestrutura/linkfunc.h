@@ -68,9 +68,12 @@ struct linkLayer{
 	int ALTERNATING;
 };
 
+struct termios oldtio,newtio;
 
 int llopen(int port, int user);
+	int initialize(int port);
 int llclose(int port_fd);
+	void finalize(int port_fd);
 	int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
 	int fazer_trama_resposta(char * res, char * msg);
 	int espera_e_responde_superv(int port, char * msg, char * res);
