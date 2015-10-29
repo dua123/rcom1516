@@ -102,7 +102,6 @@ int Logic_Emissor()
 
     //ENVIAR A TRAMA DE INFORMACAO INICIAL
     llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
-        
     
     
     //DADOS
@@ -157,6 +156,7 @@ int Logic_Recetor()
     int progresso_do_envio;
     for (progresso_do_envio = 0; progresso_do_envio < Appdata.total_number_packets; progresso_do_envio++)
     {
+        //printf("Pacote %d\n", progresso_do_envio);
         printf("|"); fflush(stdout);
         success = -1;
         

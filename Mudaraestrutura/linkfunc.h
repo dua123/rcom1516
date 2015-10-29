@@ -70,27 +70,29 @@ struct linkLayer{
 
 
 int llopen(int port, int user);
-int llwrite(int port_fd, char * message, int length);
-int llread(int port_fd, char * message);
 int llclose(int port_fd);
+	int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
+	int fazer_trama_resposta(char * res, char * msg);
+	int espera_e_responde_superv(int port, char * msg, char * res);
+	int envia_e_espera_superv(int port, char * msg, char * res);
 
+int llwrite(int port_fd, char * message, int length);
+	int envia_e_espera_dados(int size);
 
-int fazer_trama_supervisao(char * res, int type, int direction, int r_num);
-int fazer_trama_resposta(char * res, char * msg);
-int espera_e_responde_superv(int port, char * msg, char * res);
-int envia_e_espera_superv(int port, char * msg, char * res);
+int llread(int port_fd, char * message);
+	int espera_dados();
+	void enviar_RR_REJ(int successo);
+
 
 void timeout();
 
 int byte_stuffing_encode(char * trama, char * res, int size);
 int de_stuffing(char * trama,char * res, int size);
 
-int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2);
-int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
+int Fazer_trama(int tamanho_dados, char * dados, char * res, char bcc2);
+int Desfazer_trama(char *dados, char * res, int controlo);
 
-int espera_dados();
-void enviar_RR_REJ(int successo);
-int envia_e_espera_dados(int size);
+
 
 
 #endif

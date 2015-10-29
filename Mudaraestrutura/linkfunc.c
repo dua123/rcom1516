@@ -4,6 +4,7 @@
 struct linkLayer Linkdata;
 
 volatile int STOP=FALSE;
+char BCC2 = 0; 
 
 
 int llopen(int port, int user){
@@ -32,8 +33,7 @@ int llopen(int port, int user){
 
     return -1;
 }
-int llclose(int port_fd)
-{
+int llclose(int port_fd){
 
     //Construir Trama SET
     if(fazer_trama_supervisao(Linkdata.frame_envio, TYPE_DISC, EMISSOR, 0) == -1)
@@ -73,7 +73,6 @@ int llclose(int port_fd)
 
     return -1;   
 }
-
 int fazer_trama_supervisao(char * res, int type, int direction, int r_num){
     res[0] = FLAG;
     if (direction == EMISSOR)
@@ -131,8 +130,7 @@ int fazer_trama_resposta(char * res, char * msg){
 
     return 0;
 }
-int espera_e_responde_superv(int port, char * msg, char * res)
-{
+int espera_e_responde_superv(int port, char * msg, char * res){
 
     unsigned char pak;
     int state = 0;
@@ -189,8 +187,7 @@ int espera_e_responde_superv(int port, char * msg, char * res)
     STOP = FALSE;
     return 0;
 }
-int envia_e_espera_superv(int port, char * msg, char * res)
-{
+int envia_e_espera_superv(int port, char * msg, char * res){
     //Preparar a função de timeout
     (void) signal(SIGALRM, timeout);
     Linkdata.timeout = 2;
@@ -260,47 +257,41 @@ int envia_e_espera_superv(int port, char * msg, char * res)
 }
 
 
-void timeout()
-{
-    if (STOP == FALSE)
-    {
-        printf("Ocorreu time out\n");
-        write(Linkdata.portfd,Linkdata.frame_envio,5);
-        alarm(Linkdata.timeout);
-    }
-}
-
-
-
-int llread(int port_fd, char * message)
-{
+int llread(int port_fd, char * message){
     Linkdata.portfd = port_fd;
     int tamanho_frame = espera_dados();     //Linkdata.frame_resposta
 
 
     //Tirar headers dos dados
-    char dados_deframed[STUFFED_PACKET_MAXSIZE]; 
-    char BCC2; 
-    int tamanho_deframed = Desfazer_trama(Linkdata.frame_resposta, dados_deframed, Linkdata.ALTERNATING, &BCC2);
-
+    char dados_deframed[STUFFED_PACKET_MAXSIZE];
+    int tamanho_deframed = Desfazer_trama(Linkdata.frame_resposta, dados_deframed, Linkdata.ALTERNATING);
+    //printf("BCC2 llread(): %2x\n", BCC2);
 
     //Tirar stuffing aos dados
     char dados_destuffed[PACKETMAXSIZE];
     int tamanho_destuffed = tamanho_deframed - de_stuffing(dados_deframed,dados_destuffed, tamanho_deframed);
 
     //E preciso verificar BCC2
-    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
-    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
-    // ! // ! // ! // ! // ! // ! // ! // ! // ! // ! //
+    char bcc = dados_destuffed[0];
+    int i;
+    for (i = 1; i < tamanho_destuffed; i++)
+        bcc = (bcc ^ dados_destuffed[i]);
+
+    //printf("tamanho: %d", i);
+    //printf("%2x, %2x\n", bcc, BCC2);
+
+    if (bcc != BCC2)
+    {
+        return -1;
+    }
+    
 
     //copiar para buffer
     memcpy(message, dados_destuffed, tamanho_destuffed);
 
     return 0;
 }
-
-int espera_dados()
-{
+int espera_dados(){
 
     unsigned char pak;
     int i = 0;
@@ -384,8 +375,7 @@ int espera_dados()
 
     return i;
 }
-void enviar_RR_REJ(int successo)
-{
+void enviar_RR_REJ(int successo){
     char trama_resposta[5];
     if (successo == 0)
     {
@@ -400,16 +390,24 @@ void enviar_RR_REJ(int successo)
     write(Linkdata.portfd,trama_resposta,5);
 }
 
-int llwrite(int port_fd, char * message, int length)
-{
+int llwrite(int port_fd, char * message, int length){
     Linkdata.portfd = port_fd;
+
+
+    //guardar BBC2
+    char bcc = message[0];
+    int i;
+    for (i = 1; i < length; i++)
+        bcc = (bcc ^ message[i]);
+    //printf("BCC2 llwrite(): %2x\n", bcc);
+
 
     //preparar os dados
     char stuffed_data[STUFFED_PACKET_MAXSIZE];
     int temp_size = 
         length + byte_stuffing_encode(message, stuffed_data, length);
-    char bcc = (AE^CDATA(Linkdata.ALTERNATING)); //completar bcc
-    temp_size = Fazer_trama(temp_size, stuffed_data, Linkdata.frame_envio, &bcc);
+    temp_size = Fazer_trama(temp_size, stuffed_data, Linkdata.frame_envio, bcc);
+    //printf("BCC2 trama(): %2x\n", Linkdata.frame_envio[temp_size-2]);
 
     //Formular a resposta esperada
     int r; if (Linkdata.ALTERNATING == 0)  r = 1; else r = 0;
@@ -422,8 +420,7 @@ int llwrite(int port_fd, char * message, int length)
 
     return 0;
 }
-int envia_e_espera_dados(int size)
-{
+int envia_e_espera_dados(int size){
     
     //Preparar timeout
     (void) signal(SIGALRM, timeout);
@@ -492,7 +489,19 @@ int envia_e_espera_dados(int size)
     return -1;
 }
 
-int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2){
+
+void timeout(){
+    if (STOP == FALSE)
+    {
+        printf("Ocorreu time out\n");
+        write(Linkdata.portfd,Linkdata.frame_envio,5);
+        alarm(Linkdata.timeout);
+    }
+}
+
+
+
+int Fazer_trama(int tamanho_dados, char * dados, char * res, char bcc2){
 
     if(tamanho_dados> STUFFED_PACKET_MAXSIZE)
         return -1;  
@@ -505,10 +514,12 @@ int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2){
     memcpy(&res[4], &dados[0], tamanho_dados);
     memcpy(&res[4+tamanho_dados],&bcc2, 1);
     res[5+tamanho_dados] =  FLAG;
-    
+
+    //printf("BCC2 Fazer_trama(): %2x\n", res[4+tamanho_dados]);
+
     return tamanho_dados+6;
 }
-int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
+int Desfazer_trama(char *dados, char * res, int controlo){
     
     if(dados[0]!= FLAG)
         return -1;
@@ -522,7 +533,6 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
 
 
     int i = 0;
-
     while (dados[4+i] != FLAG)
     {
         i++;
@@ -534,7 +544,7 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
     }
 
     memcpy(&res[0], &dados[4], i-1);
-    memcpy(&bcc2, &dados[4+i-1], 1);
+    memcpy(&BCC2, &dados[4+i-1], 1);
 
     if(dados[4+i]!= FLAG)
         return -1;
@@ -542,8 +552,7 @@ int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2){
     return i-1;
 }
 
-int byte_stuffing_encode(char * trama, char * res, int size)
-{
+int byte_stuffing_encode(char * trama, char * res, int size){
        
     int i, j=0; 
     int count = 0;   
@@ -569,8 +578,7 @@ int byte_stuffing_encode(char * trama, char * res, int size)
     }
     return count;
 }
-int de_stuffing(char * trama,char * res, int size)
-{
+int de_stuffing(char * trama,char * res, int size){
     int i, j=0;  
     int count = 0;  
    
