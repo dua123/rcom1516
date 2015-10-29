@@ -102,11 +102,8 @@ int Logic_Emissor()
 
     //ENVIAR A TRAMA DE INFORMACAO INICIAL
     llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
-
-    //FALTA VERIFICAR SE VEM RR OU REJ
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+    
     
     //DADOS
     int progresso_do_envio;
@@ -118,31 +115,14 @@ int Logic_Emissor()
 
         temp_size = packup_data(Appdata.pack_sent, progresso_do_envio, next_chunk, DATAMAXSIZE);
         
-        llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
-
-        //FALTA VERIFICAR SE VEM RR OU REJ
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        
+        llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);        
     }
-
-
-    
-
 
     //MONTAR O COMANDO FINAL
     temp_size = packup_control(Appdata.pack_sent, PAK_CMD_LAST);
 
     //ENVIAR O COMANDO FINAL
-    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
-
-    //FALTA VERIFICAR SE VEM RR OU REJ
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
+    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);    
     return 0;
 }
 int Logic_Recetor()
