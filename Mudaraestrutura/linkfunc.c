@@ -384,60 +384,21 @@ int espera_dados()
 
     return i;
 }
-
-
-/*
-int espera_e_responde_dados(int type, int s, int n_seq, char * dados_obtidos){
-
-    
-
-
-    if (type == PAK_CMD_FIRST ||type == PAK_CMD_LAST)
+void enviar_RR_REJ(int successo)
+{
+    char trama_resposta[5];
+    if (successo == 0)
     {
-    }   
+        if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
+        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, Linkdata.ALTERNATING);
+    } 
     else
     {
-        if (unpack_data(dados_obtidos, n_seq, dados_destuffed) != 0)
-           successo = -1; 
+        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, Linkdata.ALTERNATING);
     }
-    return successo;
+
+    write(Linkdata.portfd,trama_resposta,5);
 }
-*/
-/*
-int test_file_chunking(char * source_filename, char * dest_filename){
-    char buf_ficheiro[BUFFLENGTH];
-    char buf_resultado[BUFFLENGTH];
-    long file_size = file_to_buffer(buf_ficheiro, source_filename);
-    if (file_size == -1)
-    {
-      perror("file_to_buffer()");
-    exit(-1);
-    }
-
-    int progress = 0;
-    char chunk[256];
-    while (progress < file_size)
-    {
-        progress += get_chunk(chunk, buf_ficheiro, 256, progress, file_size);
-       
-        if ( buffer_to_file(chunk, dest_filename, 256) == -1) {
-        perror("buffer_to_file()");
-        exit(-1);
-        }
-
-        printf("progress: %d", progress);
-
-    }
-    file_to_buffer(buf_resultado, dest_filename);
-
-    if ( memcmp(buf_ficheiro, buf_resultado, file_size) == 0)
-                printf("SUCESSO");
-
-    return 0;
-}
-*/
-
-
 
 int llwrite(int port_fd, char * message, int length)
 {
@@ -529,26 +490,6 @@ int envia_e_espera_dados(int size)
     }   
 
     return -1;
-}
-int enviar_RR_REJ(int successo)
-{
-
-    char trama_resposta[5];
-    if (successo == 0)
-    {
-        if (Linkdata.ALTERNATING == 0) Linkdata.ALTERNATING = 1; else Linkdata.ALTERNATING = 0;
-        fazer_trama_supervisao(trama_resposta, TYPE_RR, EMISSOR, Linkdata.ALTERNATING);
-    } 
-    else
-    {
-        fazer_trama_supervisao(trama_resposta, TYPE_REJ, EMISSOR, Linkdata.ALTERNATING);
-    }
-
-    write(Linkdata.portfd,trama_resposta,5);
-
-    
-
-        //espera_e_responde_dados(PAK_CMD_FIRST, ALTERNATING, 0, received_data);
 }
 
 int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2){

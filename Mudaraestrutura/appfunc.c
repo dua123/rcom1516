@@ -1,4 +1,6 @@
+
 #include "appfunc.h"
+
 
 int proccess_arguments(int argc, char** argv){
 
@@ -101,33 +103,48 @@ int Logic_Emissor()
     //ENVIAR A TRAMA DE INFORMACAO INICIAL
     llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
 
-    /*
+    //FALTA VERIFICAR SE VEM RR OU REJ
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     //DADOS
     int progresso_do_envio;
-    for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
+    for (progresso_do_envio = 0; progresso_do_envio < Appdata.total_number_packets; progresso_do_envio++)
     {
         //Encontrar o proximo chunk
         char next_chunk[DATAMAXSIZE];
-        get_chunk(next_chunk, filename, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE, total_file_size);
-        char data_packet[PACKETMAXSIZE];
-        temp_size = packup_data(data_packet, progresso_do_envio, next_chunk, DATAMAXSIZE);
+        get_chunk(next_chunk, DATAMAXSIZE, progresso_do_envio*DATAMAXSIZE);
+
+        temp_size = packup_data(Appdata.pack_sent, progresso_do_envio, next_chunk, DATAMAXSIZE);
         
-        envia_e_espera_dados(data_packet, ALTERNATING, temp_size);
-        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
+        llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
+
+        //FALTA VERIFICAR SE VEM RR OU REJ
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        
     }
 
-    */
+
+    
 
 
     //MONTAR O COMANDO FINAL
     temp_size = packup_control(Appdata.pack_sent, PAK_CMD_LAST);
 
     //ENVIAR O COMANDO FINAL
-    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);  
+    llwrite(Appdata.fd_porta, Appdata.pack_sent, temp_size);
+
+    //FALTA VERIFICAR SE VEM RR OU REJ
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     return 0;
 }
-
 int Logic_Recetor()
 {
 
@@ -155,20 +172,39 @@ int Logic_Recetor()
     }
     
 
-    /*
-    //dados
+    
+    //TRANSFERENCIA DE DADOS
     int progresso_do_envio;
-    for (progresso_do_envio = 0; progresso_do_envio < total_number_packets; progresso_do_envio++)
+    for (progresso_do_envio = 0; progresso_do_envio < Appdata.total_number_packets; progresso_do_envio++)
     {
         printf("|"); fflush(stdout);
         success = -1;
+        
+        char dados_obtidos[DATAMAXSIZE];
         while (success != 0)
-            success = espera_e_responde_dados(PAK_CMD_DATA, ALTERNATING, progresso_do_envio, received_data);
-        if (ALTERNATING == 0) ALTERNATING = 1; else ALTERNATING = 0;
+        {
+            success = 0;
+            int size_read = llread(Appdata.fd_porta, Appdata.pack_received);
+            if ( size_read == -1)
+            {
+                success = -1;
+                printf("llread(): ERRO \n");    
+            }
 
-        buffer_to_file(received_data, filename, DATAMAXSIZE);
+            //Verificaçoes
+            if ( unpack_data(dados_obtidos, progresso_do_envio, Appdata.pack_received) != 0)
+                success = -1; 
+
+
+
+            //Eviar resposta
+            enviar_RR_REJ(success);
+        }
+        buffer_to_file(dados_obtidos, DATAMAXSIZE);
     }
-    */
+    printf("\nCompleto \n");
+
+
 
     //ESPERA PELO COMANDO FINAL
     success = -1;
@@ -186,15 +222,17 @@ int Logic_Recetor()
         //Verificaçoes
         Appdata.total_number_packets = unpack_control(Appdata.pack_received, PAK_CMD_LAST, Appdata.filename);
         if(Appdata.total_number_packets == -1)
-            success = -1;
+            success = -1;   
         //printf("N pacotes: %d, Nome Ficheiro: %s\n", Appdata.total_number_packets, Appdata.filename);
 
+        
         //Eviar resposta
         enviar_RR_REJ(success);
     }
 
     return 0;
 }
+
 
 
 long file_byte_size(char * name)
@@ -212,55 +250,27 @@ long file_byte_size(char * name)
 
     return file_size;
 }
-/*
-long file_to_buffer(char * buffer, char * name)
+int buffer_to_file(char * buffer, int buffersize)
 {
-    FILE * fp = fopen(name, "r");
-    long file_size;
+    FILE * fp = fopen(Appdata.filename, "a+");
 
-    if (fp != NULL)
-    {
-        //obtain file size
-        fseek(fp, 0, SEEK_END);
-        file_size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-
-        //Read the file
-        if (fread(buffer, sizeof(char), file_size, fp) == 0 )
-                printf("file_to_buffer(): Erro a ler ficheiro \n");
-
-        fclose(fp);
-
-
-    }
-    else
-    {
-        printf("file_to_buffer(): Erro a abrir ficheiro \n");
-        return -1;
-    }
-    return file_size;
-}
-int buffer_to_file(char * buffer, char * name, long file_size)
-{
-    FILE * fp = fopen(name, "a+");
-
-    fwrite(buffer, sizeof(char), file_size, fp);
+    fwrite(buffer, sizeof(char), buffersize, fp);
 
     fclose(fp);
 
     return 0;
 }
-int get_chunk(char * res, char * file_name, int chunk_size, int offset, long file_size)
-{   
-    FILE * fp = fopen(file_name, "r");
-    fseek(fp, offset, SEEK_SET);
+int get_chunk(char * res, int chunk_size, int offset)
+{
+    fseek(Appdata.fileDescriptor, offset, SEEK_SET);
     size_t amount = chunk_size;
-    if (fread(res, sizeof(char), amount, fp) == 0 )
+    if (fread(res, sizeof(char), amount, Appdata.fileDescriptor) == 0 )
         printf("file_to_buffer(): Erro a ler ficheiro \n");
-
-    fclose(fp);
     return amount;
 }
+
+
+
 int packup_data(char * res, int n_seq, char * data, int data_size)
 {
     if(data_size > 256 )
@@ -294,7 +304,6 @@ int packup_data(char * res, int n_seq, char * data, int data_size)
     memcpy(&res[4], &data[0], data_size);
     return data_size+4;
 }
-*/
 int packup_control(char * res, int command)
 {
     if (! (command == 1 || command == 2) )
@@ -345,8 +354,6 @@ int unpack_control(char * pak, int command, char * file_name)
 
     return pack_amount;
 }
-
-/*
 int unpack_data(char * res, uint8_t n_seq, char * data)
 {
 
@@ -367,5 +374,3 @@ int unpack_data(char * res, uint8_t n_seq, char * data)
 
     return 0;
 }
-
-*/

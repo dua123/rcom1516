@@ -1,4 +1,4 @@
-#include "linkfunc.h"
+
 #include "appfunc.h"
      
 int main(int argc, char** argv)

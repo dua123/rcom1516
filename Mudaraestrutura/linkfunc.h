@@ -1,8 +1,24 @@
 #ifndef LINKFUNC
 #define LINKFUNC
 
+#include <sys/types.h>	
+#include <sys/stat.h>	
+#include <fcntl.h>
+#include <stdio.h>		
+#include <unistd.h>		
+#include <termios.h>
+#include <stdlib.h>		
+#include <string.h>		
+#include <strings.h>	
+#include <signal.h>		
+#include <errno.h>		
+#include <stdint.h>
 
-#include "global.h"
+#define _POSIX_SOURCE 1
+
+
+
+#define BAUDRATE B38400
 
 #define EMISSOR 0
 #define RECETOR 1
@@ -73,7 +89,7 @@ int Fazer_trama(int tamanho_dados, char * dados, char * res, char * bcc2);
 int Desfazer_trama(char *dados, char * res, int controlo, char * bcc2);
 
 int espera_dados();
-int enviar_RR_REJ(int successo);
+void enviar_RR_REJ(int successo);
 int envia_e_espera_dados(int size);
 
 
