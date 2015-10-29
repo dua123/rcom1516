@@ -34,10 +34,14 @@ int llopen(int port, int user){
 }
 int initialize(int port)
 {
-    int fd = open("/dev/ttyS0", O_RDWR | O_NOCTTY );
+	
+    char text[12];
+	sprintf(text, "/dev/ttyS%d", port);
+
+    int fd = open(text, O_RDWR | O_NOCTTY );
     if (fd <0) 
     {
-        perror("/dev/ttyS0"); exit(-1); 
+        perror(text); exit(-1); 
     }
  
     if ( tcgetattr(fd,&oldtio) == -1)

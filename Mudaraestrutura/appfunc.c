@@ -4,13 +4,7 @@
 
 int proccess_arguments(int argc, char** argv){
 
-    if ((argc < 3) ||
-        ((strcmp("/dev/ttyS0", argv[1])!=0) &&
-        (strcmp("/dev/ttyS1", argv[1])!=0) &&
-        (strcmp("/dev/ttyS2", argv[1])!=0) &&
-        (strcmp("/dev/ttyS3", argv[1])!=0) &&
-        (strcmp("/dev/ttyS4", argv[1])!=0) )
-        ) 
+    if ((argc < 3)) 
     {
         printf("Usage:\tnserial SerialPort\n\tex: ./app /dev/ttyS4 user\n");
         exit(1);
@@ -43,7 +37,7 @@ int proccess_arguments(int argc, char** argv){
     printf("User: %d\n", Appdata.user);
 
 
-    Appdata.porta = 0;
+    Appdata.porta = atoi(argv[1]);
 
     return 0;
 }
