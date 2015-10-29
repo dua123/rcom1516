@@ -6,7 +6,7 @@ int proccess_arguments(int argc, char** argv){
 
     if ((argc < 3)) 
     {
-        printf("Usage:\tnserial SerialPort\n\tex: ./app /dev/ttyS4 user\n");
+        printf("Usage:\tapp SerialPort user\n\tex: ./app 0 recetor\n\tex: ./app 0 emissor tux.gif\n");
         exit(1);
     }
     if ( strcmp(argv[2], "emissor") == 0 )
