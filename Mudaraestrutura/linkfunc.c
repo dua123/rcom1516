@@ -471,7 +471,8 @@ int llwrite(int port_fd, char * message, int length){
 int envia_e_espera_dados(int size){
     
     //Preparar timeout
-    (void) signal(SIGALRM, timeout);
+	Linkdata.frame_size = size;    
+	(void) signal(SIGALRM, timeout_data);
     alarm(2);
 
     //enviar
@@ -547,6 +548,14 @@ void timeout(){
     }
 }
 
+void timeout_data(){
+    if (STOP == FALSE)
+    {
+        printf("Ocorreu time out\n");
+        write(Linkdata.portfd,Linkdata.frame_envio,Linkdata.frame_size);
+        alarm(Linkdata.timeout);
+    }
+}
 
 
 int Fazer_trama(int tamanho_dados, char * dados, char * res, char bcc2){

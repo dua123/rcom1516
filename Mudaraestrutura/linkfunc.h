@@ -61,6 +61,7 @@ struct linkLayer{
 	
 	char frame_envio[526];
 	char frame_resposta[526];
+	int frame_size;
 
 	int portfd;
 	int user;
@@ -88,6 +89,7 @@ int llread(int port_fd, char * message);
 
 
 void timeout();
+void timeout_data();
 
 int byte_stuffing_encode(char * trama, char * res, int size);
 int de_stuffing(char * trama,char * res, int size);
